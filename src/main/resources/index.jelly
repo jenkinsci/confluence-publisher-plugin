@@ -4,5 +4,6 @@
   Since we don't really have anything dynamic here, let's just use static HTML. 
 -->
 <div>
-  This plugin is a sample plugin to explain how to write a Hudson plugin.
+  This plugin allows you to publish build artifacts into a Confluence wiki page.
+  Currently limited to uploading an artifact as an attachment to a page id.
 </div>

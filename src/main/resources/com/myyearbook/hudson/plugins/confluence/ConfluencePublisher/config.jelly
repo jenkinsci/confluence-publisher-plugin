@@ -1,0 +1,10 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form">
+
+	<f:section title="Job Confluence Publisher Settings">
+		<f:entry title="Confluence URL:">
+			<f:textbox name="confluence.url" value="${instance.url}" />
+			<f:validateButton title="Check Confluence" progress="Testing..." method="urlCheck" with="confluence.url" />
+		</f:entry>
+	</f:section>
+</j:jelly>

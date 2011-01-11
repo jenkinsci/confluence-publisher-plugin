@@ -32,5 +32,15 @@
   		<artifactId>atlassian-xmlrpc-binder</artifactId>
   		<version>0.9</version>
   	</dependency>
+  	<dependency>
+  		<groupId>org.jvnet.hudson</groupId>
+  		<artifactId>confluence-api</artifactId>
+  		<version>1.0</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.codehaus.swizzle</groupId>
+  		<artifactId>swizzle-confluence</artifactId>
+  		<version>1.6</version>
+  	</dependency>
   </dependencies>
 </project>
