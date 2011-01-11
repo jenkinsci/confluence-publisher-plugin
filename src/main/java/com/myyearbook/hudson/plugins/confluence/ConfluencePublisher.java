@@ -67,7 +67,17 @@ public class ConfluencePublisher extends Notifier {
 	    return req.bindJSON(ConfluencePublisher.class, formData);
 	}
 
+	// TODO: validation for urlcheck, user/pass check, archive inclusion
+	// list (fileset)
+
+	// TODO: post-build, grab file(s) from fileset, and
+	// client.addAttachment() for each one
+
+	// TODO: verify that addAttachment() will update the wiki links?
+
 	public FormValidation doUrlCheck(@QueryParameter("confluence.url") String url) throws RemoteException {
+	    // TODO: confluence url should be able to tell us the Space/PageName
+	    // to use (test with getPage)
 	    String rpcUrl = Util.confluenceUrlToXmlRpcUrl(url);
 
 	    ConfluenceSoapService client = XmlRpcClient.getInstance(rpcUrl);

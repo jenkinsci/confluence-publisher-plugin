@@ -3,8 +3,19 @@
 
 	<f:section title="Job Confluence Publisher Settings">
 		<f:entry title="Confluence URL:">
+			<!--
+				confluence url should be the page URL (e.g., /FLASH/API+Download) - we can figure out base confluence URL from that.
+			-->
 			<f:textbox name="confluence.url" value="${instance.url}" />
-			<f:validateButton title="Check Confluence" progress="Testing..." method="urlCheck" with="confluence.url" />
+			<f:validateButton title="Test Confluence URL" progress="Checking..." method="urlCheck" with="confluence.url" />
 		</f:entry>
+
+		<!-- TODO: can we use confluence "Trusted App"? -->
+		<!-- TODO: OAuth? -->
+		<!-- TODO: last resort: username + password has to be saved :( -->
+
+		<!--
+			TODO: fileset input; limit to one input file in f:repeatable? Use ant-style build/**.ext, and do multiple uploads?
+		-->
 	</f:section>
 </j:jelly>

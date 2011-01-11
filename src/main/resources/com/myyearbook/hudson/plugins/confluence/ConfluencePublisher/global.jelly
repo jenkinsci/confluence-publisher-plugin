@@ -2,9 +2,19 @@
 	xmlns:f="/lib/form">
 
 	<f:section title="Global Confluence Publisher Settings">
-		<!--<f:entry title="Confluence URL:">
+		<f:entry title="Confluence URL:">
 			<f:textbox name="confluence.url" value="" />
 		</f:entry>
-	-->
+
+		<!--
+			TODO: do we want to setup confluence "sites" globally here, and let the job pick from a site, enter a space+page
+			(verify it exists)?
+		-->
+		<!--			
+			TODO: authentication done here (safer?)
+		-->
+		<!--
+			TODO: if Trusted Site can be used, what needs to go into webapp and/or dynamic web request, to support it?
+		-->
 	</f:section>
 </j:jelly>
