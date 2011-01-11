@@ -2,26 +2,25 @@ package com.myyearbook.hudson.plugins.confluence;
 
 import hudson.Extension;
 import hudson.model.AbstractProject;
+import hudson.plugins.jira.soap.ConfluenceSoapService;
+import hudson.plugins.jira.soap.RemotePage;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 
-import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.sf.json.JSONObject;
 
-import org.codehaus.swizzle.confluence.ConfluenceException;
-import org.codehaus.swizzle.confluence.Page;
-import org.codehaus.swizzle.confluence.SwizzleException;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import com.myyearbook.hudson.plugins.confluence.rpc.Client;
+import com.myyearbook.hudson.plugins.confluence.rpc.XmlRpcClient;
 
 public class ConfluencePublisher extends Notifier {
 
@@ -30,14 +29,13 @@ public class ConfluencePublisher extends Notifier {
     private String url;
 
     @DataBoundConstructor
-    public ConfluencePublisher(@QueryParameter("confluence.url") String url) throws MalformedURLException,
-	    SwizzleException {
+    public ConfluencePublisher(@QueryParameter("confluence.url") String url) throws RemoteException {
 
 	url = "http://confluence.mybdev.com/display/FLASH/Download+API";
 
 	this.url = url;
-	final Client client = Client.getInstance(url);
-	client.login("tuser", "temp1pass.");
+	final ConfluenceSoapService client = XmlRpcClient.getInstance(url);
+	String token = client.login("tuser", "temp1pass.");
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -69,20 +67,18 @@ public class ConfluencePublisher extends Notifier {
 	    return req.bindJSON(ConfluencePublisher.class, formData);
 	}
 
-	public FormValidation doUrlCheck(@QueryParameter("confluence.url") String url) throws ConfluenceException,
-		SwizzleException, MalformedURLException {
+	public FormValidation doUrlCheck(@QueryParameter("confluence.url") String url) throws RemoteException {
 	    String rpcUrl = Util.confluenceUrlToXmlRpcUrl(url);
 
-	    Client client = Client.getInstance(rpcUrl);
+	    ConfluenceSoapService client = XmlRpcClient.getInstance(rpcUrl);
 
-	    client.login("tuser", "temp1pass.");
+	    String token = client.login("tuser", "temp1pass.");
 	    LOGGER.log(Level.INFO, "Called LOGIN method");
 
-	    Page pageData = client.getPage("FLASH", "Download API");
+	    RemotePage pageData = client.getPage(token, "FLASH", "Download API");
 	    LOGGER.log(Level.INFO, "Get page data for Download+API: " + pageData.getId());
 
 	    LOGGER.log(Level.FINE, "Content: {0}", new Object[] { pageData.getContent() });
-	    
 
 	    return FormValidation.ok("Success!");
 	}
