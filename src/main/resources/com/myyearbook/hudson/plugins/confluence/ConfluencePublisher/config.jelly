@@ -1,21 +1,34 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
 	xmlns:f="/lib/form">
 
-	<f:section title="Job Confluence Publisher Settings">
-		<f:entry title="Confluence URL:">
-			<!--
-				confluence url should be the page URL (e.g., /FLASH/API+Download) - we can figure out base confluence URL from that.
-			-->
-			<f:textbox name="confluence.url" value="${instance.url}" />
-			<f:validateButton title="Test Confluence URL" progress="Checking..." method="urlCheck" with="confluence.url" />
-		</f:entry>
+	<!-- show the selection only when there's something to select -->
+	<f:entry title="Confluence Site">
+		<select class="setting-input" name="confluence.siteName">
+			<j:forEach var="s" items="${descriptor.sites}">
+				<f:option selected="${s.name==instance.siteName}">${s.name}</f:option>
+			</j:forEach>
+		</select>
+		<!-- TODO: attachment fileset, space name, page name -->
+	</f:entry>
 
-		<!-- TODO: can we use confluence "Trusted App"? -->
-		<!-- TODO: OAuth? -->
-		<!-- TODO: last resort: username + password has to be saved :( -->
-
+	<f:entry title="Space">
+		<f:textbox name="confluence.spaceName" value="${instance.spaceName}" />
 		<!--
-			TODO: fileset input; limit to one input file in f:repeatable? Use ant-style build/**.ext, and do multiple uploads?
+			checkUrl="'${rootURL}/urlCheck?value='+escape(this.value)"
 		-->
-	</f:section>
+	</f:entry>
+
+	<f:entry title="Page">
+		<f:textbox name="confluence.pageName" value="${instance.pageName}" />
+	</f:entry>
+
+
+	<f:entry title="">
+		<f:optionalBlock title="Attach Artifacts" name="confluence.attachArtifacts">
+			<f:entry title="Files to Attach">
+				<!-- TODO: document as Ant fileset -->
+				<f:textbox name="confluence.fileSet" value="${instance.fileSet}" />
+			</f:entry>
+		</f:optionalBlock>
+	</f:entry>
 </j:jelly>

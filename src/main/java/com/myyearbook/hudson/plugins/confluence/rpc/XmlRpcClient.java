@@ -3,6 +3,7 @@ package com.myyearbook.hudson.plugins.confluence.rpc;
 import hudson.plugins.jira.soap.ConfluenceSoapService;
 import hudson.plugins.jira.soap.ConfluenceSoapServiceServiceLocator;
 
+import java.net.URL;
 import java.rmi.RemoteException;
 
 import javax.xml.rpc.ServiceException;
@@ -20,7 +21,6 @@ public class XmlRpcClient {
 	    locator.setConfluenceserviceV1EndpointAddress(rpcUrl);
 	    return locator.getConfluenceserviceV1();
 	} catch (ServiceException e) {
-	    e.printStackTrace();
 	    throw new RemoteException("Failed to create SOAP Client", e);
 	}
     }
