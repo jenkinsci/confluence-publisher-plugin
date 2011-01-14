@@ -16,6 +16,7 @@ import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
@@ -140,10 +141,10 @@ public class ConfluencePublisher extends Notifier {
     }
 
     private static final Logger LOGGER = Logger.getLogger(ConfluencePublisher.class.getName());
-    private static final String CONTENT_TYPE = "application/octet-stream";
+
     private final String siteName;
-    private final boolean attachArchivedArtifacts;
     private final boolean attachArtifacts;
+    private final boolean attachArchivedArtifacts;
     private final String fileSet;
 
     private final String spaceName;
@@ -255,35 +256,42 @@ public class ConfluencePublisher extends Notifier {
 	    return true;
 	}
 
-	long pageId;
-	RemotePage pageData = confluence.getPage(spaceName, pageName);
-	pageId = pageData.getId();
-	String attachmentComment = build.getEnvironment(listener).expand("Published from Hudson build: $BUILD_URL");
+	final RemotePage pageData = confluence.getPage(spaceName, pageName);
+	final long pageId = pageData.getId();
+	final String attachmentComment = build.getEnvironment(listener).expand(
+		"Published from Hudson build: $BUILD_URL");
 
-	// //FIXME:
-	// if (this.attachArchivedArtifacts) {
-	// List<Run<?, ?>.Artifact> existingArtifacts = build.getArtifacts();
-	// Run<?, ?>.Artifact artifact;
-	// Iterator<Run<?, ?>.Artifact> it = existingArtifacts.iterator();
-	// while (it.hasNext()) {
-	// artifact = it.next();
-	// log(listener, "Uploading as attachment: " + artifact.getFileName());
-	// confluence.addAttachment(pageId, artifact.getFile(), CONTENT_TYPE,
-	// attachmentComment);
-	// }
-	// }
+	log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
 
-	if (this.fileSet == null) {
+	if (this.attachArchivedArtifacts) {
+	    final List<File> archived = this.findArtifacts(build.getArtifactsDir());
+	    log(listener, "Found " + archived.size() + " archived artifact(s) to upload to Confluence...");
+	    for (File file : archived) {
+		final String fileName = file.getName();
+		final String contentType = URLConnection.guessContentTypeFromName(fileName);
+		log(listener, " - Uploading from archive " + fileName + " (" + contentType + ") ...");
+		try {
+		    final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType,
+			    attachmentComment);
+		    log(listener, "   done: " + result.getUrl());
+		} catch (RemoteException re) {
+		    listener.error("Unable to upload file...");
+		    re.printStackTrace(listener.getLogger());
+		    return false;
+		}
+	    }
+	}
+
+	final String fileSet = hudson.Util.fixEmptyAndTrim(this.fileSet);
+	if (fileSet == null || fileSet.length() == 0) {
 	    log(listener, "No fileset pattern configured.");
 	    return true;
 	}
 
-	log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
-
-	String artifacts = build.getEnvironment(listener).expand(this.fileSet);
+	String artifacts = build.getEnvironment(listener).expand(fileSet);
 	FilePath[] files = ws.list(artifacts);
 	if (files.length == 0) {
-	    log(listener, "No files matched the pattern '" + this.fileSet + "'.");
+	    log(listener, "No files matched the pattern '" + fileSet + "'.");
 
 	    String msg = null;
 	    try {
@@ -298,14 +306,14 @@ public class ConfluencePublisher extends Notifier {
 	    return true;
 	}
 
-	log(listener, "Found " + files.length + " artifact(s) to upload to Confluence...");
+	log(listener, "Found " + files.length + " workspace artifact(s) to upload to Confluence...");
 
 	for (FilePath file : files) {
 	    final String fileName = file.getName();
 	    final String contentType = URLConnection.guessContentTypeFromName(fileName);
 	    log(listener, " - Uploading " + fileName + " (" + contentType + ") ...");
 	    try {
-		RemoteAttachment result = confluence.addAttachment(pageId, file, contentType, attachmentComment);
+		final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType, attachmentComment);
 		log(listener, "   done: " + result.getUrl());
 	    } catch (RemoteException re) {
 		listener.error("Unable to upload file...");
@@ -316,6 +324,18 @@ public class ConfluencePublisher extends Notifier {
 	log(listener, "Done");
 
 	return true;
+    }
+
+    private List<File> findArtifacts(File artifactsDir) {
+	List<File> files = new ArrayList<File>();
+	for (File f : artifactsDir.listFiles()) {
+	    if (f.isDirectory()) {
+		files.addAll(findArtifacts(f));
+	    } else if (f.isFile()) {
+		files.add(f);
+	    }
+	}
+	return files;
     }
 
     protected void log(BuildListener listener, String message) {

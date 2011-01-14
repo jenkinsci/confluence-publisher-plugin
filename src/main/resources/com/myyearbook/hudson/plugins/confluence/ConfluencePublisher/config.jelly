@@ -2,7 +2,7 @@
 	xmlns:f="/lib/form">
 
 	<!-- show the selection only when there's something to select -->
-	<f:entry title="Confluence Site">
+	<f:entry title="Confluence Site" help="${descriptor.getHelpFile('siteName')}">
 		<select class="setting-input" name="siteName">
 			<j:forEach var="s" items="${descriptor.sites}">
 				<f:option selected="${s.name==instance.siteName}">${s.name}</f:option>
@@ -21,7 +21,7 @@
 	</f:entry>
 
 	<f:nested title="Attachments">
-		<f:entry title="" field="attachArchivedArtifacts" description="Not yet implemented">
+		<f:entry title="" field="attachArchivedArtifacts">
 			<f:checkbox title="Attach archived artifacts to page" checked="${instance.shouldAttachArchivedArtifacts()}" />
 		</f:entry>
 
