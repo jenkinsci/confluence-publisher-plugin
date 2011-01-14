@@ -10,10 +10,14 @@
 
 	<groupId>com.myyearbook.hudson.plugins</groupId>
 	<artifactId>confluence</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<name>Confluence Publisher</name>
+	<version>0.0.2</version>
 	<packaging>hpi</packaging>
 
 	<!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
+	<organization>
+		<name>Insider Guides, Inc.</name>
+	</organization>
 	<repositories>
 		<repository>
 			<id>m.g.o-public</id>

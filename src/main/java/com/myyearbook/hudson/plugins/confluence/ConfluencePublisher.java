@@ -268,7 +268,11 @@ public class ConfluencePublisher extends Notifier {
 	    log(listener, "Found " + archived.size() + " archived artifact(s) to upload to Confluence...");
 	    for (File file : archived) {
 		final String fileName = file.getName();
-		final String contentType = URLConnection.guessContentTypeFromName(fileName);
+		String contentType = URLConnection.guessContentTypeFromName(fileName);
+		if (contentType == null) {
+		    // Confluence won't accept a blank content-type
+		    contentType = "application/octet-stream";
+		}
 		log(listener, " - Uploading from archive: " + fileName + " (" + contentType + ")");
 		try {
 		    final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType,
