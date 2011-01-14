@@ -120,7 +120,7 @@ public class ConfluencePublisher extends Notifier {
 	}
 
 	@Override
-	public boolean isApplicable(Class<? extends AbstractProject> p) {
+	public boolean isApplicable(@SuppressWarnings("unchecked") Class<? extends AbstractProject> p) {
 	    LOGGER.log(Level.INFO, "in publisher, sites: " + sites);
 	    return sites != null && sites.size() > 0;
 	}
@@ -167,8 +167,8 @@ public class ConfluencePublisher extends Notifier {
 	this.attachArchivedArtifacts = attachArchivedArtifacts;
 	this.fileSet = fileSet;
 
-	LOGGER.log(Level.INFO, "Data-bound: {0}, {1}, {2}, {3}", new Object[] { siteName, spaceName, pageName,
-		attachArchivedArtifacts });
+	LOGGER.log(Level.INFO, "Data-bound: {0}, {1}, {2}, {3}, {4}", new Object[] { siteName, spaceName, pageName,
+		attachArchivedArtifacts, fileSet });
     }
 
     @Override
@@ -269,7 +269,7 @@ public class ConfluencePublisher extends Notifier {
 	    for (File file : archived) {
 		final String fileName = file.getName();
 		final String contentType = URLConnection.guessContentTypeFromName(fileName);
-		log(listener, " - Uploading from archive " + fileName + " (" + contentType + ") ...");
+		log(listener, " - Uploading from archive: " + fileName + " (" + contentType + ")");
 		try {
 		    final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType,
 			    attachmentComment);
@@ -277,6 +277,7 @@ public class ConfluencePublisher extends Notifier {
 		} catch (RemoteException re) {
 		    listener.error("Unable to upload file...");
 		    re.printStackTrace(listener.getLogger());
+		    // TODO: option to ignore on failure?
 		    return false;
 		}
 	    }
@@ -288,8 +289,11 @@ public class ConfluencePublisher extends Notifier {
 	    return true;
 	}
 
-	String artifacts = build.getEnvironment(listener).expand(fileSet);
-	FilePath[] files = ws.list(artifacts);
+	// Expand environment variables
+	final String artifacts = build.getEnvironment(listener).expand(fileSet);
+	// Obtain a list of all files that match the pattern
+	final FilePath[] files = ws.list(artifacts);
+
 	if (files.length == 0) {
 	    log(listener, "No files matched the pattern '" + fileSet + "'.");
 
@@ -311,7 +315,7 @@ public class ConfluencePublisher extends Notifier {
 	for (FilePath file : files) {
 	    final String fileName = file.getName();
 	    final String contentType = URLConnection.guessContentTypeFromName(fileName);
-	    log(listener, " - Uploading " + fileName + " (" + contentType + ") ...");
+	    log(listener, " - Uploading from workspace: " + fileName + " (" + contentType + ")");
 	    try {
 		final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType, attachmentComment);
 		log(listener, "   done: " + result.getUrl());
@@ -326,6 +330,12 @@ public class ConfluencePublisher extends Notifier {
 	return true;
     }
 
+    /**
+     * Recursively scan a directory, returning all files encountered
+     * 
+     * @param artifactsDir
+     * @return
+     */
     private List<File> findArtifacts(File artifactsDir) {
 	List<File> files = new ArrayList<File>();
 	for (File f : artifactsDir.listFiles()) {
@@ -338,6 +348,12 @@ public class ConfluencePublisher extends Notifier {
 	return files;
     }
 
+    /**
+     * Log helper
+     * 
+     * @param listener
+     * @param message
+     */
     protected void log(BuildListener listener, String message) {
 	listener.getLogger().println("[confluence] " + message);
     }

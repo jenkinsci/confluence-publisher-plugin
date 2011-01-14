@@ -7,7 +7,8 @@
 				<table width="100%">
 
 					<f:entry title="Confluence URL" field="url">
-						<f:textbox />
+						<f:textbox clazz="required" />
+						<!-- checkUrl="'descriptorByName/ConfluencePublisher/checkUrl?url='+escape(this.value)" -->
 					</f:entry>
 
 					<f:entry title="Username" field="username">

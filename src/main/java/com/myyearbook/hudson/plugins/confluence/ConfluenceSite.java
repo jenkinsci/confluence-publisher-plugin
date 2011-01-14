@@ -22,12 +22,27 @@ import org.kohsuke.stapler.QueryParameter;
 
 import com.myyearbook.hudson.plugins.confluence.rpc.XmlRpcClient;
 
+/**
+ * Represents an external Confluence installation and configuration needed to
+ * access it.
+ * 
+ * @author Joe Hansche <jhansche@myyearbook.com>
+ */
 public class ConfluenceSite implements Describable<ConfluenceSite> {
-    private static final Logger LOGGER = Logger.getLogger(ConfluenceSite.class.getName());
-
+    /**
+     * The base URL of the Confluence site
+     */
     public final URL url;
-    public final String username;
+
+    /**
+     * The username to login as
+     */
     public final String password;
+
+    /**
+     * The password for that user
+     */
+    public final String username;
 
     /**
      * Stapler constructor
@@ -48,8 +63,31 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 	}
 
 	this.url = url;
-	this.username = username;
-	this.password = password;
+	this.username = hudson.Util.fixEmptyAndTrim(username);
+	this.password = hudson.Util.fixEmptyAndTrim(password);
+    }
+
+    /**
+     * Creates a remote access session to this Confluence site
+     * 
+     * @return {@link ConfluenceSession}
+     * @throws RemoteException
+     */
+    public ConfluenceSession createSession() throws RemoteException {
+	final String rpcUrl = Util.confluenceUrlToSoapUrl(url.toExternalForm());
+	final ConfluenceSoapService service = XmlRpcClient.getInstance(rpcUrl);
+	final String token;
+	if (username != null && password != null) {
+	    token = service.login(username, password);
+	} else {
+	    // Empty string token means anonymous access
+	    token = "";
+	}
+	return new ConfluenceSession(service, token);
+    }
+
+    public DescriptorImpl getDescriptor() {
+	return (DescriptorImpl) Hudson.getInstance().getDescriptorOrDie(getClass());
     }
 
     public String getName() {
@@ -61,25 +99,10 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 	return "Confluence{" + getName() + "}";
     }
 
-    public ConfluenceSession createSession() throws RemoteException {
-	final String rpcUrl = Util.confluenceUrlToSoapUrl(url.toExternalForm());
-	ConfluenceSoapService service = XmlRpcClient.getInstance(rpcUrl);
-	return new ConfluenceSession(this, service, service.login(username, password));
-    }
-
-    public DescriptorImpl getDescriptor() {
-	return (DescriptorImpl) Hudson.getInstance().getDescriptorOrDie(getClass());
-    }
-
     @Extension
     public static final class DescriptorImpl extends Descriptor<ConfluenceSite> {
 	public DescriptorImpl() {
 	    super(ConfluenceSite.class);
-	}
-
-	@Override
-	public String getDisplayName() {
-	    return "Confluence Site";
 	}
 
 	/**
@@ -110,7 +133,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 	}
 
 	/**
-	 * Checks if the JIRA URL is accessible and exists.
+	 * Checks if the Confluence URL is accessible.
 	 */
 	public FormValidation doUrlCheck(@QueryParameter final String url) throws IOException, ServletException {
 	    // this can be used to check existence of any file in any URL, so
@@ -140,5 +163,12 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 		}
 	    }.check();
 	}
+
+	@Override
+	public String getDisplayName() {
+	    return "Confluence Site";
+	}
     }
+
+    private static final Logger LOGGER = Logger.getLogger(ConfluenceSite.class.getName());
 }

@@ -11,18 +11,18 @@
 	</f:entry>
 
 	<f:entry title="Space" field="spaceName">
-		<f:textbox
+		<f:textbox clazz="required"
 			checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
 	</f:entry>
 
 	<f:entry title="Page" field="pageName">
-		<f:textbox
+		<f:textbox clazz="required"
 			checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
 	</f:entry>
 
 	<f:nested title="Attachments">
 		<f:entry title="" field="attachArchivedArtifacts">
-			<f:checkbox title="Attach archived artifacts to page" checked="${instance.shouldAttachArchivedArtifacts()}" />
+			<f:checkbox title="Attach archived artifacts to page" checked="${instance.shouldAttachArchivedArtifacts()}" default="true" />
 		</f:entry>
 
 		<f:entry title="Files to Attach" field="fileSet">
