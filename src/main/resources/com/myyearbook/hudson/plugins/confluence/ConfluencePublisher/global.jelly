@@ -1,26 +1,24 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
 	xmlns:f="/lib/form">
 
-	<f:set var="rootURL" value="/plugin/confluence" />
-
 	<f:section title="Confluence">
 		<f:entry title="Confluence Sites">
-			<f:repeatable var="site" items="${descriptor.sites}">
+			<f:repeatable field="sites">
 				<table width="100%">
 
-					<f:entry title="Confluence URL:">
-						<f:textbox name="confluence.url" value="${site.url}" checkUrl="'${rootURL}/urlCheck?value='+escape(this.value)" />
+					<f:entry title="Confluence URL" field="url">
+						<f:textbox />
 					</f:entry>
 
-					<f:entry title="Username:">
-						<f:textbox name="confluence.username" value="${site.username}" checkMethod="post"
-							checkUrl="'${rootURL}/loginCheck?url='+escape(Form.findMatchingInput(this,'confluence.url').value)+'&amp;user='+escape(this.value)+'&amp;pass='+escape(Form.findMatchingInput(this,'confluence.password').value)" />
+					<f:entry title="Username" field="username">
+						<f:textbox checkMethod="post" />
 					</f:entry>
 
-					<f:entry title="Password:">
-						<input class="setting-input" name="confluence.password" value="${site.password}" type="password"
-							onchange="Form.findMatchingInput(this,'confluence.username').onchange()" />
+					<f:entry title="Password" field="password">
+						<f:password />
 					</f:entry>
+
+					<f:validateButton title="Check Login" progress="Checking..." method="loginCheck" with="url,username,password" />
 
 					<f:entry title="">
 						<div align="right">

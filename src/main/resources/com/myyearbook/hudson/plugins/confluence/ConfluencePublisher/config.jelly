@@ -3,32 +3,31 @@
 
 	<!-- show the selection only when there's something to select -->
 	<f:entry title="Confluence Site">
-		<select class="setting-input" name="confluence.siteName">
+		<select class="setting-input" name="siteName">
 			<j:forEach var="s" items="${descriptor.sites}">
 				<f:option selected="${s.name==instance.siteName}">${s.name}</f:option>
 			</j:forEach>
 		</select>
-		<!-- TODO: attachment fileset, space name, page name -->
 	</f:entry>
 
-	<f:entry title="Space">
-		<f:textbox name="confluence.spaceName" value="${instance.spaceName}" />
-		<!--
-			checkUrl="'${rootURL}/urlCheck?value='+escape(this.value)"
-		-->
+	<f:entry title="Space" field="spaceName">
+		<f:textbox
+			checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
 	</f:entry>
 
-	<f:entry title="Page">
-		<f:textbox name="confluence.pageName" value="${instance.pageName}" />
+	<f:entry title="Page" field="pageName">
+		<f:textbox
+			checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
 	</f:entry>
 
+	<f:nested title="Attachments">
+		<f:entry title="" field="attachArchivedArtifacts" description="Not yet implemented">
+			<f:checkbox title="Attach archived artifacts to page" checked="${instance.shouldAttachArchivedArtifacts()}" />
+		</f:entry>
 
-	<f:entry title="">
-		<f:optionalBlock title="Attach Artifacts" name="confluence.attachArtifacts">
-			<f:entry title="Files to Attach">
-				<!-- TODO: document as Ant fileset -->
-				<f:textbox name="confluence.fileSet" value="${instance.fileSet}" />
-			</f:entry>
-		</f:optionalBlock>
-	</f:entry>
+		<f:entry title="Files to Attach" field="fileSet">
+			<f:textbox />
+		</f:entry>
+	</f:nested>
+
 </j:jelly>
