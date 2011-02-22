@@ -53,7 +53,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
      */
     @DataBoundConstructor
     public ConfluenceSite(URL url, final String username, final String password) {
-	LOGGER.log(Level.INFO, "ctor args: " + url + ", " + username + ", " + password);
+	LOGGER.log(Level.FINER, "ctor args: " + url + ", " + username + ", " + password);
 	if (!url.toExternalForm().endsWith("/")) {
 	    try {
 		url = new URL(url.toExternalForm() + "/");

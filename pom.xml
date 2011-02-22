@@ -2,48 +2,51 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.jvnet.hudson.plugins</groupId>
+		<groupId>org.jenkins-ci.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>1.392</version><!-- which version of Hudson is this plugin built against? -->
+		<version>1.397</version><!-- which version of Hudson is this plugin built against? -->
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.myyearbook.hudson.plugins</groupId>
-	<artifactId>confluence</artifactId>
+	<artifactId>confluence-publisher</artifactId>
 	<name>Confluence Publisher</name>
-	<version>0.0.2</version>
+	<description>Publish build argifacts to an Atlassian Confluence wiki</description>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>hpi</packaging>
+	<url>http://wiki.jenkins-ci.org/display/JENKINS/Confluence+Publisher+Plugin</url>
 
-	<!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
 	<organization>
 		<name>Insider Guides, Inc.</name>
 	</organization>
-	<repositories>
+	<developers>
+		<developer>
+			<id>jhansche</id>
+			<name>Joe Hansche</name>
+			<email>jhansche@myyearbook.com</email>
+		</developer>
+	</developers>
+	<distributionManagement>
 		<repository>
-			<id>m.g.o-public</id>
-			<url>http://maven.glassfish.org/content/groups/public/</url>
+			<id>maven.jenkins-ci.org</id>
+			<url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
 		</repository>
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>m.g.o-public</id>
-			<url>http://maven.glassfish.org/content/groups/public/</url>
-		</pluginRepository>
-	</pluginRepositories>
+	</distributionManagement>
 	<dependencies>
-		<!--
-			<dependency> <groupId>com.atlassian.xmlrpc</groupId> <artifactId>atlassian-xmlrpc-binder</artifactId>
-			<version>0.9</version> </dependency>
-		-->
 		<dependency>
 			<groupId>org.jvnet.hudson</groupId>
 			<artifactId>confluence-api</artifactId>
 			<version>1.0</version>
 		</dependency>
-		<!--
-			<dependency> <groupId>org.codehaus.swizzle</groupId> <artifactId>swizzle-confluence</artifactId>
-			<version>1.6</version> </dependency>
-		-->
 	</dependencies>
+	<scm>
+		<connection>scm:git:git://github.com/jhansche/confluence-publisher.git</connection>
+		<developerConnection>scm:git:git@github.com:jhansche/confluence-publisher.git</developerConnection>
+		<url>http://github.com/jhansche/confluence-publisher</url>
+	</scm>
+	<repositories>
+		<repository>
+			<id>maven.jenkins-ci.org</id>
+			<url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
+		</repository>
+	</repositories>
 </project>

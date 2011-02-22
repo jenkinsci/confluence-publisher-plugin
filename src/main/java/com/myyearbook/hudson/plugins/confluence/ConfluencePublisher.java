@@ -46,7 +46,7 @@ public class ConfluencePublisher extends Notifier {
 
 	@Override
 	public boolean configure(StaplerRequest req, JSONObject formData) {
-	    LOGGER.log(Level.INFO, "Saving configuration from global! json: " + formData.toString());
+	    LOGGER.log(Level.FINE, "Saving configuration from global! json: " + formData.toString());
 	    this.setSites(req.bindJSONToList(ConfluenceSite.class, formData.get("sites")));
 	    save();
 	    return true;
@@ -115,28 +115,28 @@ public class ConfluencePublisher extends Notifier {
 	}
 
 	public List<ConfluenceSite> getSites() {
-	    LOGGER.log(Level.INFO, "getSites: " + sites);
+	    LOGGER.log(Level.FINER, "getSites: " + sites);
 	    return sites;
 	}
 
 	@Override
 	public boolean isApplicable(@SuppressWarnings("unchecked") Class<? extends AbstractProject> p) {
-	    LOGGER.log(Level.INFO, "in publisher, sites: " + sites);
+	    LOGGER.log(Level.FINEST, "in publisher, sites: " + sites);
 	    return sites != null && sites.size() > 0;
 	}
 
 	@Override
 	public Publisher newInstance(StaplerRequest req, JSONObject formData)
 		throws hudson.model.Descriptor.FormException {
-	    LOGGER.log(Level.INFO, "Creating instance of Confluence Publisher");
+	    LOGGER.log(Level.FINEST, "Creating instance of Confluence Publisher");
 	    return req.bindJSON(ConfluencePublisher.class, formData);
 	}
 
 	public void setSites(List<ConfluenceSite> sites) {
-	    LOGGER.log(Level.INFO, "+setSites: " + this.sites);
+	    LOGGER.log(Level.FINER, "+setSites: " + this.sites);
 	    this.sites.clear();
 	    this.sites.addAll(sites);
-	    LOGGER.log(Level.INFO, "-setSites: " + this.sites);
+	    LOGGER.log(Level.FINER, "-setSites: " + this.sites);
 	}
     }
 
@@ -167,8 +167,9 @@ public class ConfluencePublisher extends Notifier {
 	this.attachArchivedArtifacts = attachArchivedArtifacts;
 	this.fileSet = fileSet;
 
-	LOGGER.log(Level.INFO, "Data-bound: {0}, {1}, {2}, {3}, {4}", new Object[] { siteName, spaceName, pageName,
-		attachArchivedArtifacts, fileSet });
+	LOGGER.log(Level.FINER,
+		"Data-bound: siteName={0}, spaceName={1}, pageName={2}, attachArcivedArtifacts={3}, fileSet={4}",
+		new Object[] { siteName, spaceName, pageName, attachArchivedArtifacts, fileSet });
     }
 
     @Override
