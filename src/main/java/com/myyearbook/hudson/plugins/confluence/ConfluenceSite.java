@@ -6,6 +6,7 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.plugins.jira.soap.ConfluenceSoapService;
 import hudson.util.FormValidation;
+import hudson.util.Secret;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -37,12 +38,12 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
     /**
      * The username to login as
      */
-    public final String password;
+    public final String username;
 
     /**
      * The password for that user
      */
-    public final String username;
+    public final Secret password;
 
     /**
      * Stapler constructor
@@ -64,7 +65,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 
 	this.url = url;
 	this.username = hudson.Util.fixEmptyAndTrim(username);
-	this.password = hudson.Util.fixEmptyAndTrim(password);
+	this.password = Secret.fromString(password);
     }
 
     /**
@@ -78,7 +79,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 	final ConfluenceSoapService service = XmlRpcClient.getInstance(rpcUrl);
 	final String token;
 	if (username != null && password != null) {
-	    token = service.login(username, password);
+	    token = service.login(username, Secret.toString(password));
 	} else {
 	    // Empty string token means anonymous access
 	    token = "";
