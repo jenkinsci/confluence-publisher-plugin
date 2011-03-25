@@ -260,7 +260,7 @@ public class ConfluencePublisher extends Notifier {
 	final RemotePage pageData = confluence.getPage(spaceName, pageName);
 	final long pageId = pageData.getId();
 	final String attachmentComment = build.getEnvironment(listener).expand(
-		"Published from Hudson build: $BUILD_URL");
+		"Published from Jenkins build: $BUILD_URL");
 
 	log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
 
