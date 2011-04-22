@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 /**
  * Utility methods
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class Util {
@@ -19,23 +19,25 @@ public class Util {
 
     /**
      * Convert a generic Confluence URL into the XmlRpc endpoint URL
-     * 
+     *
      * @param url
      * @return
      * @see #XML_RPC_URL_PATH
      */
     public static String confluenceUrlToXmlRpcUrl(String url) {
-	return URI.create(url).resolve(XML_RPC_URL_PATH).toString();
+	URI uri = URI.create(url);
+	return uri.resolve(uri.getPath() + XML_RPC_URL_PATH).normalize().toString();
     }
 
     /**
      * Convert a generic Confluence URL into the SOAP endpoint URL
-     * 
+     *
      * @param url
      * @return
      * @see #SOAP_URL_PATH
      */
     public static String confluenceUrlToSoapUrl(String url) {
-	return URI.create(url).resolve(SOAP_URL_PATH).toString();
+	URI uri = URI.create(url);
+	return uri.resolve(uri.getPath() + SOAP_URL_PATH).normalize().toString();
     }
 }

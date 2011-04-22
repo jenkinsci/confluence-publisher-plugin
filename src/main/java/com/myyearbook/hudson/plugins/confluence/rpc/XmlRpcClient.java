@@ -16,9 +16,8 @@ public class XmlRpcClient {
 
     public static ConfluenceSoapService getInstance(String url) throws RemoteException {
 	try {
-	    String rpcUrl = Util.confluenceUrlToSoapUrl(url);
 	    final ConfluenceSoapServiceServiceLocator locator = new ConfluenceSoapServiceServiceLocator();
-	    locator.setConfluenceserviceV1EndpointAddress(rpcUrl);
+	    locator.setConfluenceserviceV1EndpointAddress(url);
 	    return locator.getConfluenceserviceV1();
 	} catch (ServiceException e) {
 	    throw new RemoteException("Failed to create SOAP Client", e);
