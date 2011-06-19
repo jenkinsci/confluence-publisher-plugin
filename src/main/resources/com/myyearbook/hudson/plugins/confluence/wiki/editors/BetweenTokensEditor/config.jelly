@@ -1,0 +1,15 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+    xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
+    xmlns:g="/com/myyearbook/hudson/plugins/confluence/wiki/generators">
+
+    <f:block>
+        <g:select-generator />
+
+        <f:entry title="${%Start Marker Token}" field="startMarkerToken">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="${%End Marker Token}" field="endMarkerToken">
+            <f:textbox />
+        </f:entry>
+    </f:block>
+</j:jelly>
