@@ -26,11 +26,6 @@ public class BetweenTokensEditor extends MarkupEditor {
         this.endMarkerToken = hudson.Util.fixNull(endMarkerToken);
     }
 
-    @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
-    }
-
     /**
      * Inserts the generated content in the section between the
      * {@link #startMarkerToken} and {@link #endMarkerToken}.
@@ -69,7 +64,6 @@ public class BetweenTokensEditor extends MarkupEditor {
 
     @Extension
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
-
         @Override
         public String getDisplayName() {
             return "Replace content between start/end tokens";

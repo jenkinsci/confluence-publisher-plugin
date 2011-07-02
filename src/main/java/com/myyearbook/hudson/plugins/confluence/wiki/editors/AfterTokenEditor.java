@@ -25,11 +25,6 @@ public class AfterTokenEditor extends MarkupEditor {
     }
 
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
-    }
-
-    @Override
     public String performEdits(BuildListener listener, String content, String generated)
             throws TokenNotFoundException {
         final StringBuffer sb = new StringBuffer(content);
@@ -51,7 +46,6 @@ public class AfterTokenEditor extends MarkupEditor {
 
     @Extension
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
-
         @Override
         public String getDisplayName() {
             return "Insert content after token";

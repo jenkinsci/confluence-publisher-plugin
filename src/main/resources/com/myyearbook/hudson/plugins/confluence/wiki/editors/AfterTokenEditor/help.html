@@ -2,14 +2,29 @@
 The generated content will be inserted immediately after the marker token (with a newline separator).
 <p />
 Example:<ul>
-<li>Token = "%%AFTER%%"</li>
+<li>Token = "{jenkins-marker:after}"</li>
 <li>Generated text = "2011-06-19"</li>
 <li>Existing content:<blockquote><pre>Lorem ipsum
-%%AFTER%%
+{jenkins-marker:after}
 Ipsum lorem</pre></blockquote></li>
 <li>New content:<blockquote><pre>Lorem ipsum
-%%AFTER%%
+{jenkins-marker:after}
 2011-06-19
 Ipsum lorem</pre></blockquote></li>
 </ul>
+<p />
+If you have administrative access to your Confluence installation, consider creating a custom user
+macro:
+<ul>
+  <li>Name: jenkins-marker</li>
+  <li>[ ] Macro has a body  (<i><b>uncheck</b> the box</i>)</li>
+  <li>"Macro generates HTML markup"</li>
+  <li>Template: <i>**blank**</i></li>
+</ul>
+This will create a new macro ("{jenkins-marker}"), which you can use to mark the location after
+which content will be inserted.  Using the confluence macro tag parameter capability, you can
+reuse this single tag configuration for several single-token (Before/After) editors, by simply
+making the string after the colon unique (e.g., "{jenkins-marker:build-url-inserted-after-this}").
+<p />
+This token configuration does not render in the wiki output.
 </div>

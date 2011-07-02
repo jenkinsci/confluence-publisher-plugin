@@ -22,11 +22,6 @@ public class PrependEditor extends MarkupEditor {
     }
 
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
-    }
-
-    @Override
     public String performEdits(final BuildListener listener, final String content,
             final String generated) {
         final StringBuilder sb = new StringBuilder(content);
@@ -37,7 +32,6 @@ public class PrependEditor extends MarkupEditor {
 
     @Extension
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
-
         @Override
         public String getDisplayName() {
             return "Prepend content";

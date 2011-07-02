@@ -15,15 +15,9 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class AppendEditor extends MarkupEditor {
-
     @DataBoundConstructor
     public AppendEditor(MarkupGenerator generator) {
         super(generator);
-    }
-
-    @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
     }
 
     @Override
@@ -36,7 +30,6 @@ public class AppendEditor extends MarkupEditor {
 
     @Extension
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
-
         @Override
         public String getDisplayName() {
             return "Append content";

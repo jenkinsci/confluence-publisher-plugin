@@ -1,19 +1,37 @@
 <div>
-The generated content will be inserted between the START and END markers.  Both markers must exist in the page.  Any existing content between the markers will be <b>replaced</b>.
+The generated content will be inserted between the START and END markers.  Both markers must exist
+in the page.  Any existing content between the markers will be <b>replaced</b>.
 <p />
 Example:<ul>
-<li>Start Token = "%%START%%"</li>
-<li>End Token = "%%END%%"</li>
+<li>Start Token = "{jenkins-between:start|token=replaced-section}"</li>
+<li>End Token = "{jenkins-between:end|token=replaced-section}"</li>
 <li>Generated text = "2011-06-19"</li>
 <li>Existing content:<blockquote><pre>Lorem ipsum
-%%START%%
+{jenkins-between:start|token=replaced-section}
 previous content
-%%END%%
+{jenkins-between:end|token=replaced-section}
 Ipsum lorem</pre></blockquote></li>
 <li>New content:<blockquote><pre>Lorem ipsum
-%%START%%
+{jenkins-between:start|token=replaced-section}
 2011-06-19
-%%END%%
+{jenkins-between:end|token=replaced-section}
 Ipsum lorem</pre></blockquote></li>
 </ul>
+<p />
+If you have administrative access to your Confluence installation, consider creating a custom user
+macro:
+<ul>
+  <li>Name: jenkins-between</li>
+  <li>[X] Macro has a body</li>
+  <li>"Use unprocessed macro body"</li>
+  <li>"Macro generates wiki markup"</li>
+  <li>Template: <i>**blank**</i></li>
+</ul>
+This will create a new macro ("{jenkins-between}"), which you can use to mark the start/end
+tokens.  Using the Confluence macro tag parameter capability, you can use this single tag
+configuration for several "Between start/end token" edits, and simply make each individual editor
+configuration use a unique parameter (also remember to make the start/end tags unique as well).
+<p />
+This token configuration maintains the Wiki rendering aspect of the replacement text, and the
+token does not render in the formatted wiki output.
 </div>
