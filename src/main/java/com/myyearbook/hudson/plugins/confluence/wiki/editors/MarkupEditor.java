@@ -38,26 +38,6 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     }
 
     /**
-     * Returns the descriptor for this class
-     * 
-     * @return Descriptor
-     */
-    @SuppressWarnings("unchecked")
-    public Descriptor<MarkupEditor> getDescriptor() {
-        return (Descriptor<MarkupEditor>) Hudson.getInstance().getDescriptor(getClass());
-    }
-
-    /**
-     * Returns list descriptors for all MarkupEditor implementations.
-     * 
-     * @return List of descriptors
-     */
-    public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
-        return Hudson.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
-                MarkupEditor.class);
-    }
-
-    /**
      * Perform modifications to the page content. Default implementation makes
      * no modifications.
      * 
@@ -77,6 +57,25 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     }
 
     /**
+     * Stapler seems to wrap {..} values in double quotes, which breaks marker
+     * token searching. This will strip the double quotes from those strings.
+     * 
+     * @param token
+     * @return token with wrapping double quotes stripped
+     */
+    protected final String unquoteToken(final String token) {
+        if (token == null) {
+            return null;
+        }
+
+        if (token.startsWith("\"{") && token.endsWith("}\"")) {
+            return token.substring(1, token.length() - 1);
+        }
+
+        return token;
+    }
+
+    /**
      * Modify the page markup with the given generated content.
      * 
      * @param listener
@@ -87,6 +86,26 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      */
     protected abstract String performEdits(final BuildListener listener, final String content,
             final String generated) throws TokenNotFoundException;
+
+    /**
+     * Returns the descriptor for this class
+     * 
+     * @return Descriptor
+     */
+    @SuppressWarnings("unchecked")
+    public Descriptor<MarkupEditor> getDescriptor() {
+        return (Descriptor<MarkupEditor>) Hudson.getInstance().getDescriptor(getClass());
+    }
+
+    /**
+     * Returns list descriptors for all MarkupEditor implementations.
+     * 
+     * @return List of descriptors
+     */
+    public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
+        return Hudson.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
+                MarkupEditor.class);
+    }
 
     /**
      * Descriptor for markup generators

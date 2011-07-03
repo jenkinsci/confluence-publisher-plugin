@@ -1,10 +1,12 @@
 
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
+import hudson.model.Descriptor;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.Exported;
@@ -24,6 +26,11 @@ public class FileGenerator extends MarkupGenerator {
     @DataBoundConstructor
     public FileGenerator(final String filename) {
         this.filename = Util.fixEmptyAndTrim(filename);
+    }
+
+    @Override
+    public Descriptor<MarkupGenerator> getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
     }
 
     @Override
@@ -55,4 +62,11 @@ public class FileGenerator extends MarkupGenerator {
         return "";
     }
 
+    @Extension
+    public static class DescriptorImpl extends Descriptor<MarkupGenerator> {
+        @Override
+        public String getDisplayName() {
+            return "File contents";
+        }
+    }
 }

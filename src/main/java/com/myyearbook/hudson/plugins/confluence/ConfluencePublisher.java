@@ -38,129 +38,9 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ConfluencePublisher extends Notifier implements Saveable {
-
-    @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        private static final Logger LOGGER = Logger.getLogger(DescriptorImpl.class.getName());
-
-        private final List<ConfluenceSite> sites = new ArrayList<ConfluenceSite>();
-
-        public DescriptorImpl() {
-            super(ConfluencePublisher.class);
-            load();
-        }
-
-        public List<Descriptor<MarkupEditor>> getEditors() {
-            final List<Descriptor<MarkupEditor>> editors = new ArrayList<Descriptor<MarkupEditor>>();
-
-            for (Descriptor<MarkupEditor> editor : MarkupEditor.all()) {
-                editors.add(editor);
-            }
-
-            return editors;
-        }
-
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) {
-            LOGGER.log(Level.FINE, "Saving configuration from global! json: " + formData.toString());
-            this.setSites(req.bindJSONToList(ConfluenceSite.class, formData.get("sites")));
-            save();
-            return true;
-        }
-
-        public FormValidation doPageNameCheck(@QueryParameter final String siteName,
-                @QueryParameter final String spaceName, @QueryParameter final String pageName) {
-            ConfluenceSite site = this.getSiteByName(siteName);
-
-            if (hudson.Util.fixEmptyAndTrim(spaceName) == null
-                    || hudson.Util.fixEmptyAndTrim(pageName) == null) {
-                return FormValidation.ok();
-            }
-
-            if (site == null) {
-                return FormValidation.error("Unknown site:" + siteName);
-            }
-
-            try {
-                ConfluenceSession confluence = site.createSession();
-                RemotePage page = confluence.getPage(spaceName, pageName);
-                if (page != null) {
-                    return FormValidation.ok("OK: " + page.getTitle());
-                }
-                return FormValidation.error("Page not found");
-            } catch (RemoteException re) {
-                return FormValidation.error(re, re.getMessage());
-            }
-        }
-
-        public FormValidation doSpaceNameCheck(@QueryParameter final String siteName,
-                @QueryParameter final String spaceName) {
-            ConfluenceSite site = this.getSiteByName(siteName);
-
-            if (hudson.Util.fixEmptyAndTrim(spaceName) == null) {
-                return FormValidation.ok();
-            }
-
-            if (site == null) {
-                return FormValidation.error("Unknown site:" + siteName);
-            }
-
-            try {
-                ConfluenceSession confluence = site.createSession();
-                RemoteSpace space = confluence.getSpace(spaceName);
-                if (space != null) {
-                    return FormValidation.ok("OK: " + space.getName());
-                }
-                return FormValidation.error("Space not found");
-            } catch (RemoteException re) {
-                return FormValidation.error(re, re.getMessage());
-            }
-        }
-
-        @Override
-        public String getDisplayName() {
-            return "Publish to Confluence";
-        }
-
-        public ConfluenceSite getSiteByName(String siteName) {
-            for (ConfluenceSite site : sites) {
-                if (site.getName().equals(siteName)) {
-                    return site;
-                }
-            }
-            return null;
-        }
-
-        public List<ConfluenceSite> getSites() {
-            LOGGER.log(Level.FINER, "getSites: " + sites);
-            return sites;
-        }
-
-        @Override
-        public boolean isApplicable(
-                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
-            LOGGER.log(Level.FINEST, "in publisher, sites: " + sites);
-            return sites != null && sites.size() > 0;
-        }
-
-        @Override
-        public Publisher newInstance(StaplerRequest req, JSONObject formData)
-                throws hudson.model.Descriptor.FormException {
-            LOGGER.log(Level.FINEST, "Creating instance of Confluence Publisher");
-            return req.bindJSON(ConfluencePublisher.class, formData);
-        }
-
-        public void setSites(List<ConfluenceSite> sites) {
-            LOGGER.log(Level.FINER, "+setSites: " + this.sites);
-            this.sites.clear();
-            this.sites.addAll(sites);
-            LOGGER.log(Level.FINER, "-setSites: " + this.sites);
-        }
-    }
 
     private final String siteName;
     private final boolean attachArchivedArtifacts;
@@ -463,5 +343,118 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     }
 
     public void save() throws IOException {
+    }
+
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+        private static final Logger LOGGER = Logger.getLogger(DescriptorImpl.class.getName());
+
+        private final List<ConfluenceSite> sites = new ArrayList<ConfluenceSite>();
+
+        public DescriptorImpl() {
+            super(ConfluencePublisher.class);
+            load();
+        }
+
+        public List<Descriptor<MarkupEditor>> getEditors() {
+            final List<Descriptor<MarkupEditor>> editors = new ArrayList<Descriptor<MarkupEditor>>();
+
+            for (Descriptor<MarkupEditor> editor : MarkupEditor.all()) {
+                editors.add(editor);
+            }
+
+            return editors;
+        }
+
+        @Override
+        public boolean configure(StaplerRequest req, JSONObject formData) {
+            this.setSites(req.bindJSONToList(ConfluenceSite.class, formData.get("sites")));
+            save();
+            return true;
+        }
+
+        public FormValidation doPageNameCheck(@QueryParameter final String siteName,
+                @QueryParameter final String spaceName, @QueryParameter final String pageName) {
+            ConfluenceSite site = this.getSiteByName(siteName);
+
+            if (hudson.Util.fixEmptyAndTrim(spaceName) == null
+                    || hudson.Util.fixEmptyAndTrim(pageName) == null) {
+                return FormValidation.ok();
+            }
+
+            if (site == null) {
+                return FormValidation.error("Unknown site:" + siteName);
+            }
+
+            try {
+                ConfluenceSession confluence = site.createSession();
+                RemotePage page = confluence.getPage(spaceName, pageName);
+                if (page != null) {
+                    return FormValidation.ok("OK: " + page.getTitle());
+                }
+                return FormValidation.error("Page not found");
+            } catch (RemoteException re) {
+                return FormValidation.error(re, re.getMessage());
+            }
+        }
+
+        public FormValidation doSpaceNameCheck(@QueryParameter final String siteName,
+                @QueryParameter final String spaceName) {
+            ConfluenceSite site = this.getSiteByName(siteName);
+
+            if (hudson.Util.fixEmptyAndTrim(spaceName) == null) {
+                return FormValidation.ok();
+            }
+
+            if (site == null) {
+                return FormValidation.error("Unknown site:" + siteName);
+            }
+
+            try {
+                ConfluenceSession confluence = site.createSession();
+                RemoteSpace space = confluence.getSpace(spaceName);
+                if (space != null) {
+                    return FormValidation.ok("OK: " + space.getName());
+                }
+                return FormValidation.error("Space not found");
+            } catch (RemoteException re) {
+                return FormValidation.error(re, re.getMessage());
+            }
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Publish to Confluence";
+        }
+
+        public ConfluenceSite getSiteByName(String siteName) {
+            for (ConfluenceSite site : sites) {
+                if (site.getName().equals(siteName)) {
+                    return site;
+                }
+            }
+            return null;
+        }
+
+        public List<ConfluenceSite> getSites() {
+            return sites;
+        }
+
+        @Override
+        public boolean isApplicable(
+                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
+            return sites != null && sites.size() > 0;
+        }
+
+        @Override
+        public Publisher newInstance(StaplerRequest req, JSONObject formData)
+                throws hudson.model.Descriptor.FormException {
+            return req.bindJSON(ConfluencePublisher.class, formData);
+        }
+
+        public void setSites(List<ConfluenceSite> sites) {
+            this.sites.clear();
+            this.sites.addAll(sites);
+        }
     }
 }

@@ -23,6 +23,11 @@ public class PlainTextGenerator extends MarkupGenerator {
     }
 
     @Override
+    public Descriptor<MarkupGenerator> getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
+    @Override
     public String generateMarkup(AbstractBuild<?, ?> build, BuildListener listener) {
         return expand(build, listener, this.text);
     }

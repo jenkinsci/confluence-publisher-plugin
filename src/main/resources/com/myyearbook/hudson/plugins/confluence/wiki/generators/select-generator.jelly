@@ -1,5 +1,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
     xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-    <f:hetero-radio field="generator" descriptors="${descriptor.getGenerators()}" />
+    <f:entry title="${%Content generator}:" field="generator">
+        <f:hetero-radio descriptors="${descriptor.getGenerators()}" />
+    </f:entry>
 </j:jelly>

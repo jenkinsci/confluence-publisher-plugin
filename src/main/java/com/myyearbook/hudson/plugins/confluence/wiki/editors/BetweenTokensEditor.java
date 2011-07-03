@@ -2,6 +2,7 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.BuildListener;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -22,8 +23,8 @@ public class BetweenTokensEditor extends MarkupEditor {
     public BetweenTokensEditor(final MarkupGenerator generator, final String startMarkerToken,
             final String endMarkerToken) {
         super(generator);
-        this.startMarkerToken = hudson.Util.fixNull(startMarkerToken);
-        this.endMarkerToken = hudson.Util.fixNull(endMarkerToken);
+        this.startMarkerToken = unquoteToken(Util.fixEmptyAndTrim(startMarkerToken));
+        this.endMarkerToken = unquoteToken(Util.fixEmptyAndTrim(endMarkerToken));
     }
 
     /**

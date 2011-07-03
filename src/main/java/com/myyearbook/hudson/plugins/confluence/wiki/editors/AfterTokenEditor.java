@@ -2,6 +2,7 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.BuildListener;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,7 +22,7 @@ public class AfterTokenEditor extends MarkupEditor {
     public AfterTokenEditor(final MarkupGenerator generator, final String markerToken) {
         super(generator);
 
-        this.markerToken = hudson.Util.fixNull(markerToken);
+        this.markerToken = unquoteToken(Util.fixEmptyAndTrim(markerToken));
     }
 
     @Override
