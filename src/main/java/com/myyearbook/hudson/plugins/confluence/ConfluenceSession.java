@@ -1,11 +1,13 @@
+
 package com.myyearbook.hudson.plugins.confluence;
 
 import hudson.FilePath;
-import hudson.plugins.jira.soap.ConfluenceSoapService;
-import hudson.plugins.jira.soap.RemoteAttachment;
-import hudson.plugins.jira.soap.RemotePage;
-import hudson.plugins.jira.soap.RemoteServerInfo;
-import hudson.plugins.jira.soap.RemoteSpace;
+import hudson.plugins.confluence.soap.ConfluenceSoapService;
+import hudson.plugins.confluence.soap.RemoteAttachment;
+import hudson.plugins.confluence.soap.RemotePage;
+import hudson.plugins.confluence.soap.RemotePageUpdateOptions;
+import hudson.plugins.confluence.soap.RemoteServerInfo;
+import hudson.plugins.confluence.soap.RemoteSpace;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -41,8 +43,8 @@ public class ConfluenceSession {
      * @param token
      */
     /* package */ConfluenceSession(final ConfluenceSoapService service, final String token) {
-	this.service = service;
-	this.token = token;
+        this.service = service;
+        this.token = token;
     }
 
     /**
@@ -52,7 +54,7 @@ public class ConfluenceSession {
      * @throws RemoteException
      */
     public RemoteServerInfo getServerInfo() throws RemoteException {
-	return this.service.getServerInfo(this.token);
+        return this.service.getServerInfo(this.token);
     }
 
     /**
@@ -63,7 +65,7 @@ public class ConfluenceSession {
      * @throws RemoteException
      */
     public RemoteSpace getSpace(String spaceKey) throws RemoteException {
-	return this.service.getSpace(this.token, spaceKey);
+        return this.service.getSpace(this.token, spaceKey);
     }
 
     /**
@@ -75,7 +77,16 @@ public class ConfluenceSession {
      * @throws RemoteException
      */
     public RemotePage getPage(String spaceKey, String pageKey) throws RemoteException {
-	return this.service.getPage(this.token, spaceKey, pageKey);
+        return this.service.getPage(this.token, spaceKey, pageKey);
+    }
+
+    public RemotePage storePage(final RemotePage page) throws RemoteException {
+        return this.service.storePage(this.token, page);
+    }
+
+    public RemotePage updatePage(final RemotePage page, final RemotePageUpdateOptions options)
+            throws RemoteException {
+        return this.service.updatePage(this.token, page, options);
     }
 
     /**
@@ -86,7 +97,7 @@ public class ConfluenceSession {
      * @throws RemoteException
      */
     public RemoteAttachment[] getAttachments(long pageId) throws RemoteException {
-	return this.service.getAttachments(this.token, pageId);
+        return this.service.getAttachments(this.token, pageId);
     }
 
     /**
@@ -100,15 +111,16 @@ public class ConfluenceSession {
      * @return {@link RemoteAttachment} instance that was created on the server
      * @throws RemoteException
      */
-    public RemoteAttachment addAttachment(long pageId, String fileName, String contentType, String comment, byte[] bytes)
-	    throws RemoteException {
-	RemoteAttachment attachment = new RemoteAttachment();
-	attachment.setPageId(pageId);
-	attachment.setFileName(sanitizeFileName(fileName));
-	attachment.setFileSize(bytes.length);
-	attachment.setContentType(contentType);
-	attachment.setComment(comment);
-	return this.service.addAttachment(this.token, attachment, bytes);
+    public RemoteAttachment addAttachment(long pageId, String fileName, String contentType,
+            String comment, byte[] bytes)
+            throws RemoteException {
+        RemoteAttachment attachment = new RemoteAttachment();
+        attachment.setPageId(pageId);
+        attachment.setFileName(sanitizeFileName(fileName));
+        attachment.setFileSize(bytes.length);
+        attachment.setContentType(contentType);
+        attachment.setComment(comment);
+        return this.service.addAttachment(this.token, attachment, bytes);
     }
 
     /**
@@ -122,13 +134,14 @@ public class ConfluenceSession {
      * @throws IOException
      * @throws InterruptedException
      */
-    public RemoteAttachment addAttachment(long pageId, FilePath file, String contentType, String comment)
-	    throws IOException, InterruptedException {
-	ByteArrayOutputStream baos;
-	baos = new ByteArrayOutputStream((int) file.length());
-	file.copyTo(baos);
-	byte[] data = baos.toByteArray();
-	return addAttachment(pageId, file.getName(), contentType, comment, data);
+    public RemoteAttachment addAttachment(long pageId, FilePath file, String contentType,
+            String comment)
+            throws IOException, InterruptedException {
+        ByteArrayOutputStream baos;
+        baos = new ByteArrayOutputStream((int) file.length());
+        file.copyTo(baos);
+        byte[] data = baos.toByteArray();
+        return addAttachment(pageId, file.getName(), contentType, comment, data);
     }
 
     /**
@@ -143,26 +156,26 @@ public class ConfluenceSession {
      * @throws FileNotFoundException
      */
     public RemoteAttachment addAttachment(long pageId, File file, String contentType, String comment)
-	    throws FileNotFoundException, IOException {
-	final int len = (int) file.length();
+            throws FileNotFoundException, IOException {
+        final int len = (int) file.length();
 
-	final FileChannel in = new FileInputStream(file).getChannel();
+        final FileChannel in = new FileInputStream(file).getChannel();
 
-	final ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
-	final WritableByteChannel out = Channels.newChannel(baos);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
+        final WritableByteChannel out = Channels.newChannel(baos);
 
-	try {
-	    // Copy
-	    in.transferTo(0, len, out);
-	} finally {
-	    // Clean up
-	    out.close();
-	    in.close();
-	}
+        try {
+            // Copy
+            in.transferTo(0, len, out);
+        } finally {
+            // Clean up
+            out.close();
+            in.close();
+        }
 
-	final byte[] data = baos.toByteArray();
+        final byte[] data = baos.toByteArray();
 
-	return addAttachment(pageId, file.getName(), contentType, comment, data);
+        return addAttachment(pageId, file.getName(), contentType, comment, data);
     }
 
     /**
@@ -172,9 +185,9 @@ public class ConfluenceSession {
      * @return
      */
     public static String sanitizeFileName(String fileName) {
-	if (fileName == null) {
-	    return null;
-	}
-	return hudson.Util.fixEmptyAndTrim(fileName.replace('+', '_').replace('&', '_'));
+        if (fileName == null) {
+            return null;
+        }
+        return hudson.Util.fixEmptyAndTrim(fileName.replace('+', '_').replace('&', '_'));
     }
 }

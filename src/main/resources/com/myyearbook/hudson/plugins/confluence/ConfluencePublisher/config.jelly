@@ -1,33 +1,38 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
-	xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+    xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
 	<!-- show the selection only when there's something to select -->
-	<f:entry title="Confluence Site" help="${descriptor.getHelpFile('siteName')}">
-		<select class="setting-input" name="siteName">
-			<j:forEach var="s" items="${descriptor.sites}">
-				<f:option selected="${s.name==instance.siteName}">${s.name}</f:option>
-			</j:forEach>
-		</select>
-	</f:entry>
+    <f:entry title="Confluence Site" help="${descriptor.getHelpFile('siteName')}">
+        <select class="setting-input" name="siteName">
+            <j:forEach var="s" items="${descriptor.sites}">
+                <f:option selected="${s.name==instance.siteName}">${s.name}</f:option>
+            </j:forEach>
+        </select>
+    </f:entry>
 
-	<f:entry title="Space" field="spaceName">
-		<f:textbox clazz="required"
-			checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
-	</f:entry>
+    <f:entry title="Space" field="spaceName">
+        <f:textbox clazz="required"
+            checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
+    </f:entry>
 
-	<f:entry title="Page" field="pageName">
-		<f:textbox clazz="required"
-			checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
-	</f:entry>
+    <f:entry title="Page" field="pageName">
+        <f:textbox clazz="required"
+            checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
+    </f:entry>
 
-	<f:nested title="Attachments">
-		<f:entry title="" field="attachArchivedArtifacts">
-			<f:checkbox title="Attach archived artifacts to page" checked="${instance.shouldAttachArchivedArtifacts()}" default="true" />
-		</f:entry>
+    <f:entry title="Artifacts" field="attachArchivedArtifacts">
+        <f:checkbox title="Attach archived artifacts to page"
+            checked="${instance.shouldAttachArchivedArtifacts()}" default="true" />
+    </f:entry>
 
-		<f:entry title="Files to Attach" field="fileSet">
-			<f:textbox />
-		</f:entry>
-	</f:nested>
+    <f:entry title="Other files to attach" field="fileSet">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="Wiki Markup Replacements" help="${descriptor.getHelpFile('editorList')}">
+        <f:hetero-list name="editorList" hasHeader="true"
+            descriptors="${descriptor.getEditors()}" items="${instance.configuredEditors}"
+            addCaption="Add Replacement" />
+    </f:entry>
 
 </j:jelly>
