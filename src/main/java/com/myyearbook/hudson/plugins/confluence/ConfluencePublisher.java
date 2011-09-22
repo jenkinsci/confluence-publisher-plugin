@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class ConfluencePublisher extends Notifier implements Saveable {
+    private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final String siteName;
     private final boolean attachArchivedArtifacts;
@@ -210,7 +211,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         for (FilePath file : files) {
             final String fileName = file.getName();
-            final String contentType = URLConnection.guessContentTypeFromName(fileName);
+            String contentType = URLConnection.guessContentTypeFromName(fileName);
+
+            if (StringUtils.isEmpty(contentType)) {
+                // Confluence does not allow an empty content type
+                contentType = DEFAULT_CONTENT_TYPE;
+            }
+
             log(listener, " - Uploading file: " + fileName + " (" + contentType + ")");
 
             try {
