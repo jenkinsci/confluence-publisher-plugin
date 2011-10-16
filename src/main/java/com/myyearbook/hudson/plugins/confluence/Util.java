@@ -5,7 +5,7 @@ import java.net.URI;
 
 /**
  * Utility methods
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class Util {
@@ -17,7 +17,7 @@ public class Util {
 
     /**
      * Convert a generic Confluence URL into the XmlRpc endpoint URL
-     * 
+     *
      * @param url
      * @return
      * @see #XML_RPC_URL_PATH
@@ -29,7 +29,7 @@ public class Util {
 
     /**
      * Convert a generic Confluence URL into the SOAP endpoint URL
-     * 
+     *
      * @param url
      * @return
      * @see #SOAP_URL_PATH

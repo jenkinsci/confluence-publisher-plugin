@@ -1,6 +1,9 @@
 
 package com.myyearbook.hudson.plugins.confluence;
 
+import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor;
+import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -10,10 +13,6 @@ import hudson.model.Saveable;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
-import hudson.plugins.confluence.soap.RemoteAttachment;
-import hudson.plugins.confluence.soap.RemotePage;
-import hudson.plugins.confluence.soap.RemotePageUpdateOptions;
-import hudson.plugins.confluence.soap.RemoteSpace;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -21,16 +20,13 @@ import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 
+import net.sf.json.JSONObject;
+
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.export.Exported;
-
-import net.sf.json.JSONObject;
-
-import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor;
-import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +35,12 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
+import jenkins.plugins.confluence.soap.v1.RemotePage;
+import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
+import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
+import jenkins.plugins.confluence.soap.v1.RemoteSpace;
 
 public class ConfluencePublisher extends Notifier implements Saveable {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
@@ -50,8 +52,8 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private final String spaceName;
     private final String pageName;
 
-    private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors =
-            new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(this);
+    private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(
+            this);
 
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final String spaceName, final String pageName,
@@ -142,10 +144,10 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     }
 
     protected boolean performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener, ConfluenceSession confluence, RemotePage pageData)
+            BuildListener listener, ConfluenceSession confluence, final RemotePageSummary pageData)
             throws IOException, InterruptedException {
-        final long pageId = pageData.getId();
 
+        final long pageId = pageData.getId();
         FilePath ws = build.getWorkspace();
 
         if (ws == null) {
@@ -251,7 +253,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             return true;
         }
 
-        final RemotePage pageData = confluence.getPage(spaceName, pageName);
+        final RemotePageSummary pageData = confluence.getPageSummary(spaceName, pageName);
 
         // Perform attachment uploads
         try {
@@ -262,13 +264,20 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             e.printStackTrace(listener.getLogger());
         }
 
-        // Perform wiki replacements
-        try {
-            result &= this.performWikiReplacements(build, launcher, listener, confluence, pageData);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
-            e.printStackTrace(listener.getLogger());
+        // Wiki editing is only supported in versions prior to 4.0
+        if (!confluence.isVersion4() && pageData instanceof RemotePage) {
+            // Perform wiki replacements
+            try {
+                result &= this.performWikiReplacements(build, launcher, listener, confluence,
+                        (RemotePage) pageData);
+            } catch (IOException e) {
+                e.printStackTrace(listener.getLogger());
+            } catch (InterruptedException e) {
+                e.printStackTrace(listener.getLogger());
+            }
+        } else if (!editors.isEmpty()) {
+            log(listener, "Confluence version 4.0 has moved to a new page storage format.");
+            log(listener, "Not performing page edits!");
         }
 
         // Not returning `result`, because this publisher should not
@@ -316,7 +325,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Recursively scan a directory, returning all files encountered
-     * 
+     *
      * @param artifactsDir
      * @return
      */
@@ -334,7 +343,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Log helper
-     * 
+     *
      * @param listener
      * @param message
      */
@@ -395,10 +404,12 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
             try {
                 ConfluenceSession confluence = site.createSession();
-                RemotePage page = confluence.getPage(spaceName, pageName);
+                RemotePageSummary page = confluence.getPageSummary(spaceName, pageName);
+
                 if (page != null) {
                     return FormValidation.ok("OK: " + page.getTitle());
                 }
+
                 return FormValidation.error("Page not found");
             } catch (RemoteException re) {
                 return FormValidation.error(re, re.getMessage());
@@ -420,9 +431,11 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             try {
                 ConfluenceSession confluence = site.createSession();
                 RemoteSpace space = confluence.getSpace(spaceName);
+
                 if (space != null) {
                     return FormValidation.ok("OK: " + space.getName());
                 }
+
                 return FormValidation.error("Space not found");
             } catch (RemoteException re) {
                 return FormValidation.error(re, re.getMessage());
@@ -448,8 +461,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         @Override
-        public boolean isApplicable(
-                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
+        public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
             return sites != null && sites.size() > 0;
         }
 

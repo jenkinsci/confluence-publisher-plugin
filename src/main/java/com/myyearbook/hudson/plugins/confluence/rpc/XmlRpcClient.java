@@ -1,12 +1,12 @@
 
 package com.myyearbook.hudson.plugins.confluence.rpc;
 
-import hudson.plugins.confluence.soap.ConfluenceSoapService;
-import hudson.plugins.confluence.soap.ConfluenceSoapServiceServiceLocator;
-
 import java.rmi.RemoteException;
 
 import javax.xml.rpc.ServiceException;
+
+import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
+import jenkins.plugins.confluence.soap.v1.ConfluenceSoapServiceServiceLocator;
 
 public class XmlRpcClient {
     protected XmlRpcClient(String url) {

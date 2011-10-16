@@ -75,9 +75,10 @@
                 <artifactId>axistools-maven-plugin</artifactId>
                 <version>1.4</version>
                 <configuration>
-                    <packageSpace>hudson.plugins.confluence.soap</packageSpace>
                     <sourceDirectory>src/main/wsdl/</sourceDirectory>
                     <outputDirectory>target/generated-sources/localizer</outputDirectory>
+                    <packageSpace>jenkins.plugins.confluence.soap</packageSpace>
+                    <subPackageByFileName>true</subPackageByFileName>
                 </configuration>
                 <executions>
                     <execution>

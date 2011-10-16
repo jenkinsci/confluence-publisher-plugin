@@ -1,19 +1,18 @@
 
 package com.myyearbook.hudson.plugins.confluence;
 
+import com.myyearbook.hudson.plugins.confluence.rpc.XmlRpcClient;
+
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
-import hudson.plugins.confluence.soap.ConfluenceSoapService;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 
 import org.apache.axis.AxisFault;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-
-import com.myyearbook.hudson.plugins.confluence.rpc.XmlRpcClient;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -24,10 +23,13 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 
+import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
+import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
+
 /**
  * Represents an external Confluence installation and configuration needed to
  * access it.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class ConfluenceSite implements Describable<ConfluenceSite> {
@@ -48,7 +50,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 
     /**
      * Stapler constructor
-     * 
+     *
      * @param url
      * @param username
      * @param password
@@ -72,7 +74,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 
     /**
      * Creates a remote access session to this Confluence site
-     * 
+     *
      * @return {@link ConfluenceSession}
      * @throws RemoteException
      */
@@ -89,7 +91,9 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             // Empty string token means anonymous access
             token = "";
         }
-        return new ConfluenceSession(service, token);
+
+        RemoteServerInfo info = service.getServerInfo(token);
+        return new ConfluenceSession(service, token, info);
     }
 
     public DescriptorImpl getDescriptor() {
@@ -115,8 +119,8 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
          * Checks if the user name and password are valid.
          */
         public FormValidation doLoginCheck(@QueryParameter String url,
-                @QueryParameter String username,
-                @QueryParameter String password) throws IOException {
+                @QueryParameter String username, @QueryParameter String password)
+                throws IOException {
 
             url = hudson.Util.fixEmpty(url);
 
