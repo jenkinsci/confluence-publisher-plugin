@@ -31,6 +31,7 @@ public class ConfluenceSession {
      * Confluence SOAP service
      */
     private final ConfluenceSoapService service;
+    private final jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2;
 
     /**
      * Authentication token, obtained from
@@ -44,11 +45,14 @@ public class ConfluenceSession {
      * Constructor
      *
      * @param service
+     * @param serviceV2
      * @param token
      */
-    /* package */ConfluenceSession(final ConfluenceSoapService service, final String token,
+    /* package */ConfluenceSession(final ConfluenceSoapService service,
+            jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2, final String token,
             final RemoteServerInfo info) {
         this.service = service;
+        this.serviceV2 = serviceV2;
         this.token = token;
         this.serverInfo = info;
     }
@@ -126,6 +130,13 @@ public class ConfluenceSession {
     public RemotePage updatePage(final RemotePage page, final RemotePageUpdateOptions options)
             throws RemoteException {
         return this.service.updatePage(this.token, page, options);
+    }
+
+    public jenkins.plugins.confluence.soap.v2.RemotePage updatePageV2(
+            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2,
+            jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions options)
+            throws RemoteException {
+        return this.serviceV2.updatePage(token, pageDataV2, options);
     }
 
     /**
@@ -235,5 +246,14 @@ public class ConfluenceSession {
      */
     public boolean isVersion4() {
         return this.serverInfo.getMajorVersion() >= 4;
+    }
+
+    public void doV4Test(long id) throws RemoteException {
+        jenkins.plugins.confluence.soap.v2.RemotePage page = this.serviceV2.getPage(token, id);
+        System.out.println("Content: " + page.getContent());
+    }
+
+    public jenkins.plugins.confluence.soap.v2.RemotePage getPageV2(long id) throws RemoteException {
+        return this.serviceV2.getPage(token, id);
     }
 }

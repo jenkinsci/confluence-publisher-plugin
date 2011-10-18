@@ -93,7 +93,15 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         }
 
         RemoteServerInfo info = service.getServerInfo(token);
-        return new ConfluenceSession(service, token, info);
+
+        jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2 = null;
+
+        if (info.getMajorVersion() >= 4) {
+            String v2Url = Util.confluenceUrlToSoapV2Url(url.toExternalForm());
+            serviceV2 = XmlRpcClient.getV2Instance(v2Url);
+        }
+
+        return new ConfluenceSession(service, serviceV2, token, info);
     }
 
     public DescriptorImpl getDescriptor() {
@@ -170,10 +178,11 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                     }
 
                     try {
-                        if (findText(open(new URL(newurl)), "Atlassian Confluence"))
+                        if (findText(open(new URL(newurl)), "Atlassian Confluence")) {
                             return FormValidation.ok();
-                        else
-                            return FormValidation.error("Not a Confluence URL");
+                        }
+
+                        return FormValidation.error("Not a Confluence URL");
                     } catch (IOException e) {
                         LOGGER.log(Level.WARNING, "Unable to connect to " + url, e);
                         return handleIOException(url, e);

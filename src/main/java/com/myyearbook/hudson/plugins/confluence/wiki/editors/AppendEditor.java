@@ -11,7 +11,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 /**
  * Represents a simple Wiki markup editor that appends the content to the end of
  * the page. This editor requires no replacement tokens.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class AppendEditor extends MarkupEditor {
@@ -21,10 +21,16 @@ public class AppendEditor extends MarkupEditor {
     }
 
     @Override
-    public String performEdits(BuildListener listener, String content, String generated) {
+    public String performEdits(final BuildListener listener, final String content,
+            final String generated, final boolean isNewFormat) {
         final StringBuilder sb = new StringBuilder(content);
         // Append the generated content to the end of the page
-        sb.append('\n').append(generated);
+
+        if (isNewFormat) {
+            sb.append(generated);
+        } else {
+            sb.append('\n').append(generated);
+        }
         return sb.toString();
     }
 

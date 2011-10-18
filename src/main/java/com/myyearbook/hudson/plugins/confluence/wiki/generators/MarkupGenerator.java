@@ -13,7 +13,7 @@ import java.io.IOException;
 
 /**
  * Abstract class representing a method of generating Confluence wiki markup.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public abstract class MarkupGenerator implements Describable<MarkupGenerator>, ExtensionPoint {
@@ -23,22 +23,23 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
 
     @SuppressWarnings("unchecked")
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return (Descriptor<MarkupGenerator>) Hudson.getInstance().getDescriptor(getClass());
+        return Hudson.getInstance().getDescriptor(getClass());
     }
 
     /**
      * Returns all {@link MarkupGenerator} descriptors
-     * 
+     *
      * @return
      */
     public static DescriptorExtensionList<MarkupGenerator, Descriptor<MarkupGenerator>> all() {
-        return Hudson.getInstance().<MarkupGenerator, Descriptor<MarkupGenerator>>
-                getDescriptorList(MarkupGenerator.class);
+        return Hudson.getInstance()
+                .<MarkupGenerator, Descriptor<MarkupGenerator>> getDescriptorList(
+                        MarkupGenerator.class);
     }
 
     /**
      * Generates markup to be used for replacement
-     * 
+     *
      * @param build
      * @param listener
      * @return
@@ -47,7 +48,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
 
     /**
      * Expands replacement variables in the generated text
-     * 
+     *
      * @param build
      * @param listener
      * @param generated

@@ -34,7 +34,6 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 import jenkins.plugins.confluence.soap.v1.RemotePage;
@@ -265,23 +264,56 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         // Wiki editing is only supported in versions prior to 4.0
-        if (!confluence.isVersion4() && pageData instanceof RemotePage) {
-            // Perform wiki replacements
-            try {
-                result &= this.performWikiReplacements(build, launcher, listener, confluence,
-                        (RemotePage) pageData);
-            } catch (IOException e) {
-                e.printStackTrace(listener.getLogger());
-            } catch (InterruptedException e) {
-                e.printStackTrace(listener.getLogger());
+        if (!editors.isEmpty()) {
+            if (!confluence.isVersion4() && pageData instanceof RemotePage) {
+                // Perform wiki replacements
+                try {
+                    result &= this.performWikiReplacements(build, launcher, listener, confluence,
+                            (RemotePage) pageData);
+                } catch (IOException e) {
+                    e.printStackTrace(listener.getLogger());
+                } catch (InterruptedException e) {
+                    e.printStackTrace(listener.getLogger());
+                }
+            } else {
+                log(listener, "EXPERIMENTAL: performing storage format edits on Confluence 4.0");
+
+                // Must use the v2 API for this.
+                jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2 = confluence
+                        .getPageV2(pageData.getId());
+
+                try {
+                    result &= this.performWikiReplacements(build, launcher, listener, confluence,
+                            pageDataV2);
+                } catch (IOException e) {
+                    e.printStackTrace(listener.getLogger());
+                } catch (InterruptedException e) {
+                    e.printStackTrace(listener.getLogger());
+                }
             }
-        } else if (!editors.isEmpty()) {
-            log(listener, "Confluence version 4.0 has moved to a new page storage format.");
-            log(listener, "Not performing page edits!");
         }
 
         // Not returning `result`, because this publisher should not
         // fail the job
+        return true;
+    }
+
+    private boolean performWikiReplacements(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener, ConfluenceSession confluence,
+            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2) throws IOException,
+            InterruptedException {
+
+        final String editComment = build.getEnvironment(listener).expand(
+                "Published from Jenkins build: $BUILD_URL");
+        final jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions options = new jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions(
+                false, editComment);
+
+        // Get current content
+        String content = performEdits(build, listener, pageDataV2.getContent(), true);
+
+        // Now set the replacement content
+        pageDataV2.setContent(content);
+        confluence.updatePageV2(pageDataV2, options);
         return true;
     }
 
@@ -304,23 +336,27 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         final RemotePageUpdateOptions options = new RemotePageUpdateOptions(false, editComment);
 
         // Get current content
-        String content = pageData.getContent();
+        String content = performEdits(build, listener, pageData.getContent(), false);
 
+        // Now set the replacement content
+        pageData.setContent(content);
+        confluence.updatePage(pageData, options);
+        return true;
+    }
+
+    private String performEdits(final AbstractBuild<?, ?> build, final BuildListener listener,
+            String content, final boolean isNewFormat) {
         for (MarkupEditor editor : this.editors) {
             log(listener, "Performing wiki edits: " + editor.getDescriptor().getDisplayName());
+
             try {
-                content = editor.performReplacement(build, listener, content);
+                content = editor.performReplacement(build, listener, content, isNewFormat);
             } catch (TokenNotFoundException e) {
                 log(listener, "ERROR while performing replacement: " + e.getMessage());
             }
         }
 
-        // Now set the replacement content
-        pageData.setContent(content);
-
-        confluence.updatePage(pageData, options);
-
-        return true;
+        return content;
     }
 
     /**
@@ -363,8 +399,6 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        private static final Logger LOGGER = Logger.getLogger(DescriptorImpl.class.getName());
-
         private final List<ConfluenceSite> sites = new ArrayList<ConfluenceSite>();
 
         public DescriptorImpl() {

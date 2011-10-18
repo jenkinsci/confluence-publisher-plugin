@@ -16,7 +16,7 @@ import java.io.IOException;
 /**
  * Content generator that reads the markup from a configured workspace file.
  * Build variables will be replaced.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class FileGenerator extends MarkupGenerator {
@@ -30,7 +30,7 @@ public class FileGenerator extends MarkupGenerator {
 
     @Override
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+        return super.getDescriptor();
     }
 
     @Override
@@ -44,12 +44,12 @@ public class FileGenerator extends MarkupGenerator {
         FilePath markupFile = build.getWorkspace().child(this.filename);
 
         try {
-            if (markupFile.exists()) {
-                // Read the file and use its contents
-                return expand(build, listener, markupFile.readToString());
-            } else {
+            if (!markupFile.exists()) {
                 listener.getLogger().println(
                         "[confluence] Markup file (" + markupFile.getName() + ") does not exist.");
+            } else {
+                // Read the file and use its contents
+                return expand(build, listener, markupFile.readToString());
             }
         } catch (IOException e) {
             e.printStackTrace(listener.error("[confluence] Error reading input file "

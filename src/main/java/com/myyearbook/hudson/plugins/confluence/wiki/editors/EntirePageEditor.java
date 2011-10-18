@@ -21,7 +21,8 @@ public class EntirePageEditor extends MarkupEditor {
     }
 
     @Override
-    public String performEdits(BuildListener listener, String content, String generated) {
+    public String performEdits(final BuildListener listener, final String content,
+            final String generated, final boolean isNewFormat) {
         return generated;
     }
 

@@ -11,7 +11,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /**
  * Content generator that takes plain text input from the Job configuration. Any
  * build variables will be replaced.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class PlainTextGenerator extends MarkupGenerator {
@@ -24,7 +24,7 @@ public class PlainTextGenerator extends MarkupGenerator {
 
     @Override
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+        return super.getDescriptor();
     }
 
     @Override

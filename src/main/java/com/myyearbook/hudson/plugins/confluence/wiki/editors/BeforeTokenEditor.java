@@ -12,7 +12,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 /**
  * Represents a token-based Wiki markup editor that inserts the new content
  * immediately before the replacement marker token.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class BeforeTokenEditor extends MarkupEditor {
@@ -26,8 +26,8 @@ public class BeforeTokenEditor extends MarkupEditor {
     }
 
     @Override
-    public String performEdits(BuildListener listener, String content, String generated)
-            throws TokenNotFoundException {
+    public String performEdits(final BuildListener listener, final String content,
+            final String generated, final boolean isNewFormat) throws TokenNotFoundException {
         final StringBuffer sb = new StringBuffer(content);
 
         final int start = content.indexOf(markerToken);
@@ -39,7 +39,12 @@ public class BeforeTokenEditor extends MarkupEditor {
 
         // Insert the newline at {start} first, and then {generated}
         // (the newline will appear after {generated})
-        sb.insert(start, '\n').insert(start, generated);
+
+        if (isNewFormat) {
+            sb.insert(start, generated);
+        } else {
+            sb.insert(start, '\n').insert(start, generated);
+        }
         return sb.toString();
     }
 

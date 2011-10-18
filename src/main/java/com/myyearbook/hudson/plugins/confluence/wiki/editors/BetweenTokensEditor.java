@@ -12,7 +12,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 /**
  * Represents a token-based Wiki markup editor that inserts the new content
  * between two (start/end) replacement marker tokens.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class BetweenTokensEditor extends MarkupEditor {
@@ -30,15 +30,15 @@ public class BetweenTokensEditor extends MarkupEditor {
     /**
      * Inserts the generated content in the section between the
      * {@link #startMarkerToken} and {@link #endMarkerToken}.
-     * 
+     *
      * @param listener
      * @param content
      * @param generated
      * @throws TokenNotFoundException
      */
     @Override
-    public String performEdits(BuildListener listener, String content, String generated)
-            throws TokenNotFoundException {
+    public String performEdits(final BuildListener listener, final String content,
+            final String generated, final boolean isNewFormat) throws TokenNotFoundException {
         final StringBuffer sb = new StringBuffer(content);
 
         final int start = content.indexOf(startMarkerToken) + startMarkerToken.length();
@@ -57,9 +57,12 @@ public class BetweenTokensEditor extends MarkupEditor {
         sb.delete(start, end);
 
         // Then insert the new content:
-        sb.insert(start, '\n');
-        sb.insert(start, generated);
-        sb.insert(start, '\n');
+        if (isNewFormat) {
+            sb.insert(start, generated);
+        } else {
+            // Surround in newlines
+            sb.insert(start, '\n').insert(start, generated).insert(start, '\n');
+        }
         return sb.toString();
     }
 

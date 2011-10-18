@@ -15,6 +15,9 @@ public class Util {
     /** Relative path to resolve the SOAP endpoint URL */
     private static final String SOAP_URL_PATH = "rpc/soap-axis/confluenceservice-v1";
 
+    /** Relative path to resolve the SOAP v2 endpoint URL */
+    private static final String SOAP_V2_URL_PATH = "rpc/soap-axis/confluenceservice-v2";
+
     /**
      * Convert a generic Confluence URL into the XmlRpc endpoint URL
      *
@@ -37,5 +40,10 @@ public class Util {
     public static String confluenceUrlToSoapUrl(String url) {
         URI uri = URI.create(url);
         return uri.resolve(SOAP_URL_PATH).normalize().toString();
+    }
+
+    public static String confluenceUrlToSoapV2Url(String url) {
+        URI uri = URI.create(url);
+        return uri.resolve(SOAP_V2_URL_PATH).normalize().toString();
     }
 }

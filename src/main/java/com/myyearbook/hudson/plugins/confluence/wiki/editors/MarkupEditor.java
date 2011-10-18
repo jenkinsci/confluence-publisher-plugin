@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * Base markup editor class
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public abstract class MarkupEditor implements Describable<MarkupEditor>, ExtensionPoint {
@@ -29,7 +29,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
 
     /**
      * Creates a generic markup editor
-     * 
+     *
      * @param generator Markup generator
      */
     @DataBoundConstructor
@@ -40,26 +40,37 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     /**
      * Perform modifications to the page content. Default implementation makes
      * no modifications.
-     * 
+     *
      * @param build
      * @param listener
      * @param content
+     * @param isNewFormat
      * @return
      * @throws TokenNotFoundException
      */
     public final String performReplacement(final AbstractBuild<?, ?> build,
-            final BuildListener listener, final String content) throws TokenNotFoundException {
-        // Generate the new content
+            final BuildListener listener, final String content, boolean isNewFormat)
+            throws TokenNotFoundException {
         final String generated = generator.generateMarkup(build, listener);
 
         // Perform the edit
-        return this.performEdits(listener, content, generated);
+        return this.performEdits(listener, content, generated, isNewFormat);
+    }
+
+    /**
+     * Log helper
+     *
+     * @param listener
+     * @param message
+     */
+    protected void log(BuildListener listener, String message) {
+        listener.getLogger().println("[confluence] " + message);
     }
 
     /**
      * Stapler seems to wrap {..} values in double quotes, which breaks marker
      * token searching. This will strip the double quotes from those strings.
-     * 
+     *
      * @param token
      * @return token with wrapping double quotes stripped
      */
@@ -77,29 +88,30 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
 
     /**
      * Modify the page markup with the given generated content.
-     * 
+     *
      * @param listener
      * @param content
      * @param generated
+     * @param isNewFormat
      * @return
      * @throws TokenNotFoundException
      */
     protected abstract String performEdits(final BuildListener listener, final String content,
-            final String generated) throws TokenNotFoundException;
+            final String generated, final boolean isNewFormat) throws TokenNotFoundException;
 
     /**
      * Returns the descriptor for this class
-     * 
+     *
      * @return Descriptor
      */
     @SuppressWarnings("unchecked")
     public Descriptor<MarkupEditor> getDescriptor() {
-        return (Descriptor<MarkupEditor>) Hudson.getInstance().getDescriptor(getClass());
+        return Hudson.getInstance().getDescriptor(getClass());
     }
 
     /**
      * Returns list descriptors for all MarkupEditor implementations.
-     * 
+     *
      * @return List of descriptors
      */
     public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
@@ -109,13 +121,13 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
 
     /**
      * Descriptor for markup generators
-     * 
+     *
      * @author Joe Hansche <jhansche@myyearbook.com>
      */
     public static abstract class MarkupEditorDescriptor extends Descriptor<MarkupEditor> {
         /**
          * Returns all available MarkupGenerator implementations
-         * 
+         *
          * @return List of MakrupGenerator Descriptors
          */
         public final List<Descriptor<MarkupGenerator>> getGenerators() {
@@ -132,7 +144,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     /**
      * Exception thrown when the configured token cannot be found in the wiki
      * markup.
-     * 
+     *
      * @author Joe Hansche <jhansche@myyearbook.com>
      */
     public static class TokenNotFoundException extends Exception {

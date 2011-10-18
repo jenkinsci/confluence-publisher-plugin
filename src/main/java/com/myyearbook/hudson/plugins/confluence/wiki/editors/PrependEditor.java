@@ -11,7 +11,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 /**
  * Represents a simple Wiki markup editor that prepends the content to the
  * beginning of the page. This editor requires no replacement tokens.
- * 
+ *
  * @author Joe Hansche <jhansche@myyearbook.com>
  */
 public class PrependEditor extends MarkupEditor {
@@ -23,10 +23,17 @@ public class PrependEditor extends MarkupEditor {
 
     @Override
     public String performEdits(final BuildListener listener, final String content,
-            final String generated) {
+            final String generated, final boolean isNewFormat) {
         final StringBuilder sb = new StringBuilder(content);
+
         // Prepend the generated content to the beginning of the page
-        sb.insert(0, '\n').insert(0, generated);
+        if (isNewFormat) {
+            // New format: wrap the new content with <p />
+            sb.insert(0, generated);
+        } else {
+            // Insert newline at the beginning, generated content before that
+            sb.insert(0, '\n').insert(0, generated);
+        }
         return sb.toString();
     }
 
