@@ -1,13 +1,14 @@
-
 package com.myyearbook.hudson.plugins.confluence;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor;
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.BuildListener;
+import hudson.model.EnvironmentContributingAction;
 import hudson.model.Result;
 import hudson.model.Saveable;
 import hudson.model.AbstractBuild;
@@ -46,6 +47,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     private final String siteName;
     private final boolean attachArchivedArtifacts;
+    private final boolean buildIfUnstable;
     private final String fileSet;
 
     private final String spaceName;
@@ -55,9 +57,9 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             this);
 
     @DataBoundConstructor
-    public ConfluencePublisher(String siteName, final String spaceName, final String pageName,
-            final boolean attachArchivedArtifacts, final String fileSet,
-            final List<MarkupEditor> editorList) throws IOException {
+    public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
+            final String spaceName, final String pageName, final boolean attachArchivedArtifacts,
+            final String fileSet, final List<MarkupEditor> editorList) throws IOException {
 
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
@@ -70,6 +72,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         this.siteName = siteName;
         this.spaceName = spaceName;
         this.pageName = pageName;
+        this.buildIfUnstable = buildIfUnstable;
         this.attachArchivedArtifacts = attachArchivedArtifacts;
         this.fileSet = fileSet;
 
@@ -142,9 +145,10 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         return spaceName;
     }
 
-    protected boolean performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener, ConfluenceSession confluence, final RemotePageSummary pageData)
-            throws IOException, InterruptedException {
+    protected boolean
+            performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
+                    BuildListener listener, ConfluenceSession confluence,
+                    final RemotePageSummary pageData) throws IOException, InterruptedException {
 
         final long pageId = pageData.getId();
         FilePath ws = build.getWorkspace();
@@ -222,8 +226,8 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             log(listener, " - Uploading file: " + fileName + " (" + contentType + ")");
 
             try {
-                final RemoteAttachment result = confluence.addAttachment(pageId, file, contentType,
-                        attachmentComment);
+                final RemoteAttachment result = confluence.addAttachment(pageId, file,
+                        contentType, attachmentComment);
                 log(listener, "   done: " + result.getUrl());
             } catch (IOException ioe) {
                 listener.error("Unable to upload file...");
@@ -245,12 +249,17 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         boolean result = true;
         ConfluenceSite site = getSite();
         ConfluenceSession confluence = site.createSession();
+        Result buildResult = build.getResult();
 
-        if (!Result.SUCCESS.equals(build.getResult())) {
+        if (!buildIfUnstable && !Result.SUCCESS.equals(buildResult)) {
             // Don't process for unsuccessful builds
             log(listener, "Build status is not SUCCESS (" + build.getResult().toString() + ").");
             return true;
         }
+
+        EnvVarAction buildResultAction = new EnvVarAction("BUILD_RESULT", String
+                .valueOf(buildResult));
+        build.addAction(buildResultAction);
 
         final RemotePageSummary pageData = confluence.getPageSummary(spaceName, pageName);
 
@@ -394,6 +403,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         return attachArchivedArtifacts;
     }
 
+    /**
+     * @return the buildIfUnstable
+     */
+    public boolean shouldBuildIfUnstable() {
+        return buildIfUnstable;
+    }
+
     public void save() throws IOException {
     }
 
@@ -495,7 +511,8 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         @Override
-        public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
+        public boolean isApplicable(
+                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
             return sites != null && sites.size() > 0;
         }
 
@@ -508,6 +525,37 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         public void setSites(List<ConfluenceSite> sites) {
             this.sites.clear();
             this.sites.addAll(sites);
+        }
+    }
+
+    /**
+     * Build action that is capable of inserting arbitrary KVPs into the EnvVars.
+     *
+     * @author jhansche
+     */
+    public static class EnvVarAction implements EnvironmentContributingAction {
+        private final String name;
+        private final String value;
+
+        public EnvVarAction(final String name, final String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getIconFileName() {
+            return null;
+        }
+
+        public String getDisplayName() {
+            return null;
+        }
+
+        public String getUrlName() {
+            return null;
+        }
+
+        public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
+            env.put(name, value);
         }
     }
 }

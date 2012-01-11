@@ -10,6 +10,11 @@
         </select>
     </f:entry>
 
+    <f:entry title="" field="buildIfUnstable">
+        <f:checkbox title="Publish even if the build is unstable"
+            checked="${instance.shouldBuildIfUnstable()}" default="false" />
+    </f:entry>
+
     <f:entry title="Space" field="spaceName">
         <f:textbox clazz="required"
             checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />

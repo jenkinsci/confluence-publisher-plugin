@@ -59,9 +59,9 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
         try {
             return build.getEnvironment(listener).expand(generated);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(listener.getLogger());
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            e.printStackTrace(listener.getLogger());
         }
 
         // The expansion failed, so just return the unexpanded text
