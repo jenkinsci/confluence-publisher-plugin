@@ -261,7 +261,30 @@ public class ConfluencePublisher extends Notifier implements Saveable {
                 .valueOf(buildResult));
         build.addAction(buildResultAction);
 
-        final RemotePageSummary pageData = confluence.getPageSummary(spaceName, pageName);
+        String spaceName = this.spaceName;
+        String pageName = this.pageName;
+
+        try {
+            spaceName = build.getEnvironment(listener).expand(spaceName);
+            pageName = build.getEnvironment(listener).expand(pageName);
+        } catch (IOException e) {
+            e.printStackTrace(listener.getLogger());
+        } catch (InterruptedException e) {
+            e.printStackTrace(listener.getLogger());
+        }
+
+        RemotePageSummary pageData;
+
+        try {
+            pageData = confluence.getPageSummary(spaceName, pageName);
+        } catch (RemoteException e) {
+            // Still shouldn't fail the job, so just dump this to the console and keep going (true).
+            log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".");
+            log(listener, "Check that the page still exists.  "
+                    + "If the Space and/or Page name contain build-time parameters, "
+                    + "check that the parameter(s) are set to the proper value(s).");
+            return true;
+        }
 
         // Perform attachment uploads
         try {
@@ -462,7 +485,12 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
                 return FormValidation.error("Page not found");
             } catch (RemoteException re) {
-                return FormValidation.error(re, re.getMessage());
+                if (StringUtils.contains(pageName, '$') || StringUtils.contains(spaceName, '$')) {
+                    return FormValidation
+                            .warning("Page not found (ignoring build-time parameter)");
+                }
+
+                return FormValidation.error(re, "Page not found");
             }
         }
 
@@ -488,7 +516,12 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
                 return FormValidation.error("Space not found");
             } catch (RemoteException re) {
-                return FormValidation.error(re, re.getMessage());
+                if (StringUtils.contains(spaceName, '$')) {
+                    return FormValidation
+                            .warning("Space not found (ignoring build-time parameter)");
+                }
+
+                return FormValidation.error(re, "Space not found");
             }
         }
 
