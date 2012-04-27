@@ -248,6 +248,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         boolean result = true;
         ConfluenceSite site = getSite();
+
+        if (site == null) {
+            log(listener, "Not publishing because no Confluence Site could be found. " +
+                    "Check your Confluence configuration in system settings.");
+            return true;
+        }
+
         ConfluenceSession confluence = site.createSession();
         Result buildResult = build.getResult();
 
@@ -399,13 +406,17 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      */
     private List<FilePath> findArtifacts(File artifactsDir) {
         ArrayList<FilePath> files = new ArrayList<FilePath>();
-        for (File f : artifactsDir.listFiles()) {
-            if (f.isDirectory()) {
-                files.addAll(findArtifacts(f));
-            } else if (f.isFile()) {
-                files.add(new FilePath(f));
+
+        if (artifactsDir != null) {
+            for (File f : artifactsDir.listFiles()) {
+                if (f.isDirectory()) {
+                    files.addAll(findArtifacts(f));
+                } else if (f.isFile()) {
+                    files.add(new FilePath(f));
+                }
             }
         }
+
         return files;
     }
 
