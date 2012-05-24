@@ -42,15 +42,18 @@ public class BetweenTokensEditor extends MarkupEditor {
         final StringBuffer sb = new StringBuffer(content);
 
         final int start = content.indexOf(startMarkerToken) + startMarkerToken.length();
-        final int end = content.indexOf(endMarkerToken);
 
         if (start < 0) {
             throw new TokenNotFoundException(
                     "Start-marker token could not be found in the page content: "
                             + startMarkerToken);
-        } else if (end < 0) {
+        }
+
+        final int end = content.indexOf(endMarkerToken, start);
+
+        if (end < 0) {
             throw new TokenNotFoundException(
-                    "End-marker token could not be found in the page content: " + endMarkerToken);
+                    "End-marker token could not be found after the start-marker token: " + endMarkerToken);
         }
 
         // Remove the entire marked section (exclusive)
