@@ -1,4 +1,16 @@
-
+/*
+ * Copyright 2011-2012 MeetMe, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.myyearbook.hudson.plugins.confluence;
 
 import hudson.FilePath;
@@ -34,8 +46,7 @@ public class ConfluenceSession {
     private final jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2;
 
     /**
-     * Authentication token, obtained from
-     * {@link ConfluenceSoapService#login(String,String)}
+     * Authentication token, obtained from {@link ConfluenceSoapService#login(String,String)}
      */
     private final String token;
 
@@ -85,10 +96,9 @@ public class ConfluenceSession {
      * @param pageKey
      * @return {@link RemotePage} instance
      * @throws RemoteException
-     * @throws UnsupportedOperationException if attempting to call this method
-     *             against a 4.0 or newer server
-     * @deprecated Calling this method on a Confluence 4.0+ server will result
-     *             in a RemoteException
+     * @throws UnsupportedOperationException if attempting to call this method against a 4.0 or
+     * newer server
+     * @deprecated Calling this method on a Confluence 4.0+ server will result in a RemoteException
      */
     @Deprecated
     public RemotePage getPage(String spaceKey, String pageKey) throws RemoteException {
@@ -102,10 +112,9 @@ public class ConfluenceSession {
     }
 
     /**
-     * This method is an attempt to bridge the gap between the deprecated v1
-     * APIs and the as-yet unimplemented v2 APIs. The v1 getPage() API no longer
-     * works on version 4.0+ servers, but the v2 getPage() does. The v1
-     * getPageSummary() is the same functionality as getPage(), minus the
+     * This method is an attempt to bridge the gap between the deprecated v1 APIs and the as-yet
+     * unimplemented v2 APIs. The v1 getPage() API no longer works on version 4.0+ servers, but the
+     * v2 getPage() does. The v1 getPageSummary() is the same functionality as getPage(), minus the
      * existing page content.
      *
      * @param spaceKey
