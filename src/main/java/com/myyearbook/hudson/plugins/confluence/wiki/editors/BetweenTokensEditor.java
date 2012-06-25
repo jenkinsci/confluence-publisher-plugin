@@ -53,15 +53,16 @@ public class BetweenTokensEditor extends MarkupEditor {
             final String generated, final boolean isNewFormat) throws TokenNotFoundException {
         final StringBuffer sb = new StringBuffer(content);
 
-        final int start = content.indexOf(startMarkerToken) + startMarkerToken.length();
+        final int markerStart = content.indexOf(startMarkerToken);
+        final int contentStart = markerStart + startMarkerToken.length();
 
-        if (start < 0) {
+        if (markerStart < 0) {
             throw new TokenNotFoundException(
                     "Start-marker token could not be found in the page content: "
                             + startMarkerToken);
         }
 
-        final int end = content.indexOf(endMarkerToken, start);
+        final int end = content.indexOf(endMarkerToken, contentStart);
 
         if (end < 0) {
             throw new TokenNotFoundException(
@@ -69,14 +70,14 @@ public class BetweenTokensEditor extends MarkupEditor {
         }
 
         // Remove the entire marked section (exclusive)
-        sb.delete(start, end);
+        sb.delete(contentStart, end);
 
         // Then insert the new content:
         if (isNewFormat) {
-            sb.insert(start, generated);
+            sb.insert(contentStart, generated);
         } else {
             // Surround in newlines
-            sb.insert(start, '\n').insert(start, generated).insert(start, '\n');
+            sb.insert(contentStart, '\n').insert(contentStart, generated).insert(contentStart, '\n');
         }
         return sb.toString();
     }
