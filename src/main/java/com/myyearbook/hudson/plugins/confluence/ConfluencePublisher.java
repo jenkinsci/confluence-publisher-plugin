@@ -1,11 +1,11 @@
 /*
  * Copyright 2011-2012 MeetMe, Inc.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- *
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -158,10 +158,9 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         return spaceName;
     }
 
-    protected boolean
-            performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
-                    BuildListener listener, ConfluenceSession confluence,
-                    final RemotePageSummary pageData) throws IOException, InterruptedException {
+    protected boolean performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener, ConfluenceSession confluence,
+            final RemotePageSummary pageData) throws IOException, InterruptedException {
 
         final long pageId = pageData.getId();
         FilePath ws = build.getWorkspace();
@@ -299,11 +298,15 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             pageData = confluence.getPageSummary(spaceName, pageName);
         } catch (RemoteException e) {
             // Still shouldn't fail the job, so just dump this to the console and keep going (true).
-            log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".");
-            log(listener, "Check that the page still exists.  "
-                    + "If the Space and/or Page name contain build-time parameters, "
-                    + "check that the parameter(s) are set to the proper value(s).");
-            return true;
+            log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".  Attempting to create the page now...");
+
+            try {
+                pageData = this.createPage(confluence, spaceName, pageName);
+            } catch (RemoteException exc2) {
+                log(listener, "Page could not be created!  Aborting edits...");
+                e.printStackTrace(listener.getLogger());
+                return true;
+            }
         }
 
         // Perform attachment uploads
@@ -348,6 +351,24 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         // Not returning `result`, because this publisher should not
         // fail the job
         return true;
+    }
+
+    /**
+     * Creates a new Page in Confluence.
+     * 
+     * @param confluence
+     * @param spaceName
+     * @param pageName
+     * @return The resulting Page
+     * @throws RemoteException
+     */
+    private RemotePage createPage(ConfluenceSession confluence, String spaceName, String pageName)
+            throws RemoteException {
+        RemotePage newPage = new RemotePage();
+        newPage.setTitle(pageName);
+        newPage.setSpace(spaceName);
+        newPage.setContent("");
+        return confluence.storePage(newPage);
     }
 
     private boolean performWikiReplacements(AbstractBuild<?, ?> build, Launcher launcher,
@@ -413,7 +434,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Recursively scan a directory, returning all files encountered
-     *
+     * 
      * @param artifactsDir
      * @return
      */
@@ -435,7 +456,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Log helper
-     *
+     * 
      * @param listener
      * @param message
      */
@@ -511,10 +532,11 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             } catch (RemoteException re) {
                 if (StringUtils.contains(pageName, '$') || StringUtils.contains(spaceName, '$')) {
                     return FormValidation
-                            .warning("Page not found (ignoring build-time parameter)");
+                            .warning("Unable to determine if the page exists because it contains build-time parameters.");
                 }
 
-                return FormValidation.error(re, "Page not found");
+                return FormValidation.warning("Page not found. Check that the page still exists. "
+                        + "If you continue, we'll try to create the page at publish-time.");
             }
         }
 
@@ -542,7 +564,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             } catch (RemoteException re) {
                 if (StringUtils.contains(spaceName, '$')) {
                     return FormValidation
-                            .warning("Space not found (ignoring build-time parameter)");
+                            .warning("Unable to determine if the space exists because it contains build-time parameters.");
                 }
 
                 return FormValidation.error(re, "Space not found");
@@ -587,7 +609,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Build action that is capable of inserting arbitrary KVPs into the EnvVars.
-     *
+     * 
      * @author jhansche
      */
     public static class EnvVarAction implements EnvironmentContributingAction {
