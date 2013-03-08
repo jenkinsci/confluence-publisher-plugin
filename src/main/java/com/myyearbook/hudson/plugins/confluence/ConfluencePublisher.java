@@ -15,27 +15,19 @@ package com.myyearbook.hudson.plugins.confluence;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor;
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
-
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
-import hudson.model.EnvironmentContributingAction;
-import hudson.model.Result;
-import hudson.model.Saveable;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Descriptor;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
-
+import jenkins.plugins.confluence.soap.v1.*;
 import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -48,12 +40,6 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
-import jenkins.plugins.confluence.soap.v1.RemotePage;
-import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
-import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
-import jenkins.plugins.confluence.soap.v1.RemoteSpace;
 
 public class ConfluencePublisher extends Notifier implements Saveable {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
@@ -68,6 +54,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(
             this);
+    private long parentId;
 
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
@@ -292,21 +279,10 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             e.printStackTrace(listener.getLogger());
         }
 
-        RemotePageSummary pageData;
-
-        try {
-            pageData = confluence.getPageSummary(spaceName, pageName);
-        } catch (RemoteException e) {
-            // Still shouldn't fail the job, so just dump this to the console and keep going (true).
-            log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".  Attempting to create the page now...");
-
-            try {
-                pageData = this.createPage(confluence, spaceName, pageName);
-            } catch (RemoteException exc2) {
-                log(listener, "Page could not be created!  Aborting edits...");
-                e.printStackTrace(listener.getLogger());
-                return true;
-            }
+        parentId = -1;
+        RemotePageSummary pageData = getOrCreatePage(confluence, listener, spaceName, pageName);
+        if (pageData == null) {
+            return true;
         }
 
         // Perform attachment uploads
@@ -354,8 +330,32 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     }
 
     /**
-     * Creates a new Page in Confluence.
-     * 
+     * This is returning the lef node of the page tree and is creating all nodes
+     */
+    private RemotePageSummary getOrCreatePage(ConfluenceSession confluence, BuildListener listener, String spaceName, String pageName) {
+        String[] pages = pageName.split("/");
+        RemotePageSummary pageData = null;
+        for (String page : pages) {
+            try {
+                pageData = confluence.getPageSummary(spaceName, page);
+            } catch (RemoteException e) {
+                // Still shouldn't fail the job, so just dump this to the console and keep going (true).
+                try {
+                    pageData = this.createPage(confluence, spaceName, page);
+                } catch (RemoteException exc2) {
+                    log(listener, "Page could not be created!  Aborting edits...");
+                    e.printStackTrace(listener.getLogger());
+                    return null;
+                }
+            }
+            parentId = pageData.getId();
+        }
+        return pageData;
+    }
+
+    /**
+     * Creates each page in path if not existing and link it to prev page.
+     *
      * @param confluence
      * @param spaceName
      * @param pageName
@@ -368,12 +368,15 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         newPage.setTitle(pageName);
         newPage.setSpace(spaceName);
         newPage.setContent("");
+        if (parentId != -1) {
+            newPage.setParentId(parentId);
+        }
         return confluence.storePage(newPage);
     }
 
     private boolean performWikiReplacements(AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener, ConfluenceSession confluence,
-            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2) throws IOException,
+                                            BuildListener listener, ConfluenceSession confluence,
+                                            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2) throws IOException,
             InterruptedException {
 
         final String editComment = build.getEnvironment(listener).expand(
@@ -401,7 +404,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      * @throws IOException
      */
     protected boolean performWikiReplacements(AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener, ConfluenceSession confluence, RemotePage pageData)
+                                              BuildListener listener, ConfluenceSession confluence, RemotePage pageData)
             throws IOException, InterruptedException {
 
         final String editComment = build.getEnvironment(listener).expand(
@@ -418,7 +421,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     }
 
     private String performEdits(final AbstractBuild<?, ?> build, final BuildListener listener,
-            String content, final boolean isNewFormat) {
+                                String content, final boolean isNewFormat) {
         for (MarkupEditor editor : this.editors) {
             log(listener, "Performing wiki edits: " + editor.getDescriptor().getDisplayName());
 
@@ -434,7 +437,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Recursively scan a directory, returning all files encountered
-     * 
+     *
      * @param artifactsDir
      * @return
      */
@@ -456,7 +459,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Log helper
-     * 
+     *
      * @param listener
      * @param message
      */
@@ -508,7 +511,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         public FormValidation doPageNameCheck(@QueryParameter final String siteName,
-                @QueryParameter final String spaceName, @QueryParameter final String pageName) {
+                                              @QueryParameter final String spaceName, @QueryParameter final String pageName) {
             ConfluenceSite site = this.getSiteByName(siteName);
 
             if (hudson.Util.fixEmptyAndTrim(spaceName) == null
@@ -541,7 +544,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         public FormValidation doSpaceNameCheck(@QueryParameter final String siteName,
-                @QueryParameter final String spaceName) {
+                                               @QueryParameter final String spaceName) {
             ConfluenceSite site = this.getSiteByName(siteName);
 
             if (hudson.Util.fixEmptyAndTrim(spaceName) == null) {
@@ -609,7 +612,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     /**
      * Build action that is capable of inserting arbitrary KVPs into the EnvVars.
-     * 
+     *
      * @author jhansche
      */
     public static class EnvVarAction implements EnvironmentContributingAction {
