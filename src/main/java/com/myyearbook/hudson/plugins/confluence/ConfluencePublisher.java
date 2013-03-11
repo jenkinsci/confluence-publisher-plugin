@@ -54,12 +54,11 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(
             this);
-    private long parentId;
 
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
-            final String spaceName, final String pageName, final boolean attachArchivedArtifacts,
-            final String fileSet, final List<MarkupEditor> editorList) throws IOException {
+                               final String spaceName, final String pageName, final boolean attachArchivedArtifacts,
+                               final String fileSet, final List<MarkupEditor> editorList) throws IOException {
 
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
@@ -146,8 +145,8 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     }
 
     protected boolean performAttachments(AbstractBuild<?, ?> build, Launcher launcher,
-            BuildListener listener, ConfluenceSession confluence,
-            final RemotePageSummary pageData) throws IOException, InterruptedException {
+                                         BuildListener listener, ConfluenceSession confluence,
+                                         final RemotePageSummary pageData) throws IOException, InterruptedException {
 
         final long pageId = pageData.getId();
         FilePath ws = build.getWorkspace();
@@ -279,7 +278,6 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             e.printStackTrace(listener.getLogger());
         }
 
-        parentId = -1;
         RemotePageSummary pageData = getOrCreatePage(confluence, listener, spaceName, pageName);
         if (pageData == null) {
             return true;
@@ -335,6 +333,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private RemotePageSummary getOrCreatePage(ConfluenceSession confluence, BuildListener listener, String spaceName, String pageName) {
         String[] pages = pageName.split("/");
         RemotePageSummary pageData = null;
+        long parentId = -1;
         for (String page : pages) {
             try {
                 pageData = confluence.getPageSummary(spaceName, page);
@@ -342,6 +341,9 @@ public class ConfluencePublisher extends Notifier implements Saveable {
                 // Still shouldn't fail the job, so just dump this to the console and keep going (true).
                 try {
                     pageData = this.createPage(confluence, spaceName, page);
+                    if (parentId != -1) {
+                        pageData.setParentId(parentId);
+                    }
                 } catch (RemoteException exc2) {
                     log(listener, "Page could not be created!  Aborting edits...");
                     e.printStackTrace(listener.getLogger());
@@ -368,9 +370,6 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         newPage.setTitle(pageName);
         newPage.setSpace(spaceName);
         newPage.setContent("");
-        if (parentId != -1) {
-            newPage.setParentId(parentId);
-        }
         return confluence.storePage(newPage);
     }
 
