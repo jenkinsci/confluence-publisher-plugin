@@ -2,6 +2,10 @@
 Configure wiki markup generation and replacement/insertion settings.
 <p />
 Available markup generators:<ul>
+	<p>You can get links of uploaded attachments. Variable like $LINK[n] will be replaced with link which match
+	link of uploaded attachment on Confluence.Where <b>n</b> is position number of attached
+	file(links in array LINK[] will be provided in uploading order on Confluence).
+	Example of usage: <p> &lt;a href=&quot;$LINK[0]&quot;&gt;$JOB_NAME build artifact&lt;/a&gt;</p></p>
   <li><b>Plain text</b><br />
       Enter custom text for the replacement.  Build variables in the replacement text will be expanded.</li>
 </ul>

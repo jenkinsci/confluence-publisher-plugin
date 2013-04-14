@@ -28,6 +28,8 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 import java.util.ArrayList;
 import java.util.List;
 
+import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
+
 /**
  * Base markup editor class
  *
@@ -60,9 +62,9 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @throws TokenNotFoundException
      */
     public final String performReplacement(final AbstractBuild<?, ?> build,
-            final BuildListener listener, final String content, boolean isNewFormat)
+            final BuildListener listener, final String content, boolean isNewFormat, List<RemoteAttachment> remoteAttachments)
             throws TokenNotFoundException {
-        final String generated = generator.generateMarkup(build, listener);
+        final String generated = generator.generateMarkup(build, listener, remoteAttachments);
 
         // Perform the edit
         return this.performEdits(listener, content, generated, isNewFormat);
