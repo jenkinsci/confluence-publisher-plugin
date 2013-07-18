@@ -62,6 +62,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private final boolean attachArchivedArtifacts;
     private final boolean buildIfUnstable;
     private final String fileSet;
+    private final String labels;
 
     private final String spaceName;
     private final String pageName;
@@ -71,7 +72,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
-            final String spaceName, final String pageName, final boolean attachArchivedArtifacts,
+            final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
             final String fileSet, final List<MarkupEditor> editorList) throws IOException {
 
         if (siteName == null) {
@@ -85,6 +86,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         this.siteName = siteName;
         this.spaceName = spaceName;
         this.pageName = pageName;
+        this.labels = labels;
         this.buildIfUnstable = buildIfUnstable;
         this.attachArchivedArtifacts = attachArchivedArtifacts;
         this.fileSet = fileSet;
@@ -118,6 +120,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      */
     public String getPageName() {
         return pageName;
+    }
+
+    /**
+     * @return the labels
+     */
+    public String getLabels() {
+        return labels;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -307,6 +316,12 @@ public class ConfluencePublisher extends Notifier implements Saveable {
                 e.printStackTrace(listener.getLogger());
                 return true;
             }
+        }
+        
+        // Add the page labels
+        String labels = this.labels;
+        if (labels != null && labels.trim().length() > 0) {
+            result &= confluence.addLabel(pageData.getId(), labels);
         }
 
         // Perform attachment uploads
