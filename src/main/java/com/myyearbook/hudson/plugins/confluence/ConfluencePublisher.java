@@ -228,7 +228,9 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         log(listener, "Uploading " + files.size() + " file(s) to Confluence...");
-        List<RemoteAttachment> existingAtachments = new ArrayList<RemoteAttachment>(Arrays.asList(confluence.getAttachments(pageId)));
+        if(shouldReplaceAttachments()){
+            List<RemoteAttachment> existingAtachments = new ArrayList<RemoteAttachment>(Arrays.asList(confluence.getAttachments(pageId)));
+        }
         for (FilePath file : files) {
             final String fileName = file.getName();
 
