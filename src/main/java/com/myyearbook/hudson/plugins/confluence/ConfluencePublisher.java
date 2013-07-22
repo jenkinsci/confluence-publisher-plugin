@@ -49,6 +49,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.naming.OperationNotSupportedException;
+
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 import jenkins.plugins.confluence.soap.v1.RemotePage;
 import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
@@ -320,8 +322,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         
         // Add the page labels
         String labels = this.labels;
-        if (labels != null && labels.trim().length() > 0) {
-            result &= confluence.addLabel(pageData.getId(), labels);
+        if (StringUtils.isNotBlank(labels)) {
+            try {
+                result &= confluence.addLabels(pageData.getId(), labels);
+
+            } catch (OperationNotSupportedException e) {
+                e.printStackTrace(listener.getLogger());
+            }
         }
 
         // Perform attachment uploads
