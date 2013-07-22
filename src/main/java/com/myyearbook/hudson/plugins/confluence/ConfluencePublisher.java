@@ -49,6 +49,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.naming.OperationNotSupportedException;
+
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 import jenkins.plugins.confluence.soap.v1.RemotePage;
 import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
@@ -62,6 +64,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private final boolean attachArchivedArtifacts;
     private final boolean buildIfUnstable;
     private final String fileSet;
+    private final String labels;
 
     private final String spaceName;
     private final String pageName;
@@ -71,7 +74,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
-            final String spaceName, final String pageName, final boolean attachArchivedArtifacts,
+            final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
             final String fileSet, final List<MarkupEditor> editorList) throws IOException {
 
         if (siteName == null) {
@@ -85,6 +88,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         this.siteName = siteName;
         this.spaceName = spaceName;
         this.pageName = pageName;
+        this.labels = labels;
         this.buildIfUnstable = buildIfUnstable;
         this.attachArchivedArtifacts = attachArchivedArtifacts;
         this.fileSet = fileSet;
@@ -118,6 +122,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      */
     public String getPageName() {
         return pageName;
+    }
+
+    /**
+     * @return the labels
+     */
+    public String getLabels() {
+        return labels;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -306,6 +317,17 @@ public class ConfluencePublisher extends Notifier implements Saveable {
                 log(listener, "Page could not be created!  Aborting edits...");
                 e.printStackTrace(listener.getLogger());
                 return true;
+            }
+        }
+        
+        // Add the page labels
+        String labels = this.labels;
+        if (StringUtils.isNotBlank(labels)) {
+            try {
+                result &= confluence.addLabels(pageData.getId(), labels);
+
+            } catch (OperationNotSupportedException e) {
+                e.printStackTrace(listener.getLogger());
             }
         }
 
