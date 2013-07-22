@@ -25,6 +25,10 @@
             checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
     </f:entry>
 
+    <f:entry title="Page Labels" field="labels" help="${descriptor.getHelpFile('labels')}">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="Artifacts" field="attachArchivedArtifacts">
         <f:checkbox title="Attach archived artifacts to page"
             checked="${instance.shouldAttachArchivedArtifacts()}" default="true" />
