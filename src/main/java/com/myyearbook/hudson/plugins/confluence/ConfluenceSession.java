@@ -25,6 +25,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.rmi.RemoteException;
 
+import javax.naming.OperationNotSupportedException;
+
 import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 import jenkins.plugins.confluence.soap.v1.RemotePage;
@@ -32,6 +34,8 @@ import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
 import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
 import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 import jenkins.plugins.confluence.soap.v1.RemoteSpace;
+import jenkins.plugins.confluence.soap.v2.InvalidSessionException;
+import jenkins.plugins.confluence.soap.v2.NotPermittedException;
 
 /**
  * Connection to Confluence
@@ -264,5 +268,13 @@ public class ConfluenceSession {
 
     public jenkins.plugins.confluence.soap.v2.RemotePage getPageV2(long id) throws RemoteException {
         return this.serviceV2.getPage(token, id);
+    }
+
+    public boolean addLabels(long id, String labels) throws RemoteException, OperationNotSupportedException {
+        if (this.serviceV2 == null) {
+            throw new OperationNotSupportedException("Labels are supported as of Confluence v4 and later.");
+        } else {
+            return this.serviceV2.addLabelByName(token, labels, id);
+        }
     }
 }
