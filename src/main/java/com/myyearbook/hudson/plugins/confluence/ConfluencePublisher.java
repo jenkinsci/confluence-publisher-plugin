@@ -228,13 +228,21 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         log(listener, "Uploading " + files.size() + " file(s) to Confluence...");
+
+	boolean shouldRemoveExistingAttachments = false;
+	List<RemoteAttachment> existingAtachments = null;
         if(shouldReplaceAttachments()){
-            List<RemoteAttachment> existingAtachments = new ArrayList<RemoteAttachment>(Arrays.asList(confluence.getAttachments(pageId)));
+            RemoteAttachment[] attachments = confluence.getAttachments(pageId);
+            if(attachments != null &&  attachments.length > 0){
+                existingAtachments = Arrays.asList(confluence.getAttachments(pageId));
+                shouldRemoveExistingAttachments = true;
+            }
         }
+
         for (FilePath file : files) {
             final String fileName = file.getName();
 
-            if(shouldReplaceAttachments()){
+            if(shouldRemoveExistingAttachments){
 		for (RemoteAttachment remoteAttachment : existingAtachments) {
 			if(remoteAttachment.getFileName().equals(fileName)){
 				try{
@@ -247,7 +255,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 					throw e;
 				}
 			}
-				}
+                }
             }
 
             String contentType = URLConnection.guessContentTypeFromName(fileName);
