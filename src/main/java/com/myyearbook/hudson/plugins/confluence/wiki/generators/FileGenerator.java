@@ -20,10 +20,13 @@ import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
 
+import java.io.IOException;
+import java.util.List;
+
+import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.Exported;
-
-import java.io.IOException;
 
 /**
  * Content generator that reads the markup from a configured workspace file. Build variables will be
@@ -46,7 +49,8 @@ public class FileGenerator extends MarkupGenerator {
     }
 
     @Override
-    public String generateMarkup(AbstractBuild<?, ?> build, BuildListener listener) {
+	public String generateMarkup(AbstractBuild<?, ?> build,
+			BuildListener listener, List<RemoteAttachment> remoteAttachments) {
         if (this.filename == null) {
             listener.getLogger().println(
                     "[confluence] No file is configured, generating empty markup.");
@@ -61,7 +65,7 @@ public class FileGenerator extends MarkupGenerator {
                         "[confluence] Markup file (" + markupFile.getName() + ") does not exist.");
             } else {
                 // Read the file and use its contents
-                return expand(build, listener, markupFile.readToString());
+                return expand(build, listener, markupFile.readToString(), remoteAttachments);
             }
         } catch (IOException e) {
             e.printStackTrace(listener.error("[confluence] Error reading input file "

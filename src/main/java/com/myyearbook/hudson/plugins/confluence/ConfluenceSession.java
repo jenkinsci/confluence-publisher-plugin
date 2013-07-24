@@ -239,6 +239,21 @@ public class ConfluenceSession {
         return addAttachment(pageId, file.getName(), contentType, comment, data);
     }
 
+   /**
+    * Remove attachment
+    *
+    * @param pageId
+    * @param attachment
+    * @return
+ * @throws RemoteException
+ * @throws jenkins.plugins.confluence.soap.v1.RemoteException
+    * @throws FileNotFoundException
+    * @throws IOException
+    */
+    public boolean removeAttachment(long pageId, RemoteAttachment attachment) throws jenkins.plugins.confluence.soap.v1.RemoteException, RemoteException{
+        return this.service.removeAttachment(token, attachment.getPageId(), attachment.getFileName());
+    }
+
     /**
      * Sanitize the attached filename, per Confluence restrictions
      *
