@@ -22,6 +22,11 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+
+import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 /**
  * Abstract class representing a method of generating Confluence wiki markup.
@@ -56,7 +61,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param listener
      * @return
      */
-    public abstract String generateMarkup(AbstractBuild<?, ?> build, BuildListener listener);
+    public abstract String generateMarkup(AbstractBuild<?, ?> build, BuildListener listener, List<RemoteAttachment> remoteAttachments);
 
     /**
      * Expands replacement variables in the generated text
@@ -67,16 +72,40 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @return
      */
     protected String expand(final AbstractBuild<?, ?> build, final BuildListener listener,
-            final String generated) {
+            final String generated, List<RemoteAttachment> remoteAttachments) {
+	//If expansion failed, just return the unexpanded text
+	String result = generated;
         try {
-            return build.getEnvironment(listener).expand(generated);
+		result = expandAttachmentsLink(listener, generated,remoteAttachments);
+		result = build.getEnvironment(listener).expand(result);
         } catch (IOException e) {
             e.printStackTrace(listener.getLogger());
         } catch (InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
-        // The expansion failed, so just return the unexpanded text
-        return generated;
+        return result;
+    }
+    /**
+     * Expands replacement $LINK[n] variables with uploaded files links
+     *
+     * @param listener
+     * @param generated
+     * @param remoteAttachments
+     * @return
+     */
+    protected String expandAttachmentsLink(final BuildListener listener, String generated, List<RemoteAttachment> remoteAttachments ){
+	String result = generated;
+	for (int i = 0; i < remoteAttachments.size(); i++) {
+		RemoteAttachment attachment = remoteAttachments.get(i);
+			try {
+				String url = attachment.getUrl();
+				String href = url.substring(url.indexOf(new URI(url).getPath()));
+				result = result.replace("$LINK["+i+"]", href);
+			} catch (URISyntaxException e) {
+	            e.printStackTrace(listener.getLogger());
+			}
+		}
+	return result;
     }
 }
