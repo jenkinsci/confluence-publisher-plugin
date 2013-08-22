@@ -355,9 +355,14 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         String labels = this.labels;
         if (StringUtils.isNotBlank(labels)) {
             try {
-                result &= confluence.addLabels(pageData.getId(), labels);
+                String expandedLabels = build.getEnvironment(listener).expand(labels);
+                result &= confluence.addLabels(pageData.getId(), expandedLabels);
 
             } catch (OperationNotSupportedException e) {
+                e.printStackTrace(listener.getLogger());
+            } catch (IOException e) {
+                e.printStackTrace(listener.getLogger());
+            } catch (InterruptedException e) {
                 e.printStackTrace(listener.getLogger());
             }
         }
