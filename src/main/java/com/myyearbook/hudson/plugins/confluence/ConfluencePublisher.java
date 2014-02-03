@@ -194,9 +194,15 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         if (this.attachArchivedArtifacts) {
             final List<FilePath> archived = this.findArtifacts(build.getArtifactsDir());
-            log(listener, "Found " + archived.size()
-                    + " archived artifact(s) to upload to Confluence...");
-            files.addAll(archived);
+
+            if (archived.size() == 0) {
+                log(listener, "Attempting to attach the archived artifacts, but there are no"
+                        + " archived artifacts from the job! Check job configuration...");
+            } else {
+                log(listener, "Found " + archived.size()
+                        + " archived artifact(s) to upload to Confluence...");
+                files.addAll(archived);
+            }
         }
 
         final String fileSet = hudson.Util.fixEmptyAndTrim(this.fileSet);
@@ -502,12 +508,18 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private List<FilePath> findArtifacts(File artifactsDir) {
         ArrayList<FilePath> files = new ArrayList<FilePath>();
 
-        if (artifactsDir != null) {
-            for (File f : artifactsDir.listFiles()) {
-                if (f.isDirectory()) {
-                    files.addAll(findArtifacts(f));
-                } else if (f.isFile()) {
-                    files.add(new FilePath(f));
+        if (artifactsDir != null && artifactsDir.isDirectory()) {
+            File[] listed = artifactsDir.listFiles();
+
+            if (listed != null) {
+                for (File f : listed) {
+                    if (f == null) continue;
+
+                    if (f.isDirectory()) {
+                        files.addAll(findArtifacts(f));
+                    } else if (f.isFile()) {
+                        files.add(new FilePath(f));
+                    }
                 }
             }
         }
