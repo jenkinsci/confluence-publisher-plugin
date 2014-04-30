@@ -70,6 +70,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
     private final String spaceName;
     private final String pageName;
+    private final long parentId;
 
     private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(
             this);
@@ -77,7 +78,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     @DataBoundConstructor
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
             final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
-            final String fileSet, final List<MarkupEditor> editorList, final boolean replaceAttachments) throws IOException {
+            final String fileSet, final List<MarkupEditor> editorList, final boolean replaceAttachments, final long parentId) throws IOException {
 
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
@@ -90,6 +91,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         this.siteName = siteName;
         this.spaceName = spaceName;
         this.pageName = pageName;
+        this.parentId = parentId;
         this.labels = labels;
         this.buildIfUnstable = buildIfUnstable;
         this.attachArchivedArtifacts = attachArchivedArtifacts;
@@ -125,6 +127,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      */
     public String getPageName() {
         return pageName;
+    }
+
+    /**
+     * @return the parentId
+     */
+    public long getParentId() {
+        return parentId;
     }
 
     /**
@@ -330,6 +339,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         String spaceName = this.spaceName;
         String pageName = this.pageName;
+        long parentId = this.parentId;
 
         try {
             spaceName = build.getEnvironment(listener).expand(spaceName);
@@ -349,7 +359,14 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".  Attempting to create the page now...");
 
             try {
-                pageData = this.createPage(confluence, spaceName, pageName);
+                // if we haven't specified a parent, assign the Space home page as the parent
+                if (parentId == 0L) {
+                    RemoteSpace space = confluence.getSpace(spaceName);
+                    if (space != null) parentId = space.getHomePage();
+                }
+
+                pageData = this.createPage(confluence, spaceName, pageName, parentId);
+
             } catch (RemoteException exc2) {
                 log(listener, "Page could not be created!  Aborting edits...");
                 e.printStackTrace(listener.getLogger());
@@ -427,14 +444,16 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      * @return The resulting Page
      * @throws RemoteException
      */
-    private RemotePage createPage(ConfluenceSession confluence, String spaceName, String pageName)
+    private RemotePage createPage(ConfluenceSession confluence, String spaceName, String pageName, long parentId)
             throws RemoteException {
         RemotePage newPage = new RemotePage();
         newPage.setTitle(pageName);
         newPage.setSpace(spaceName);
         newPage.setContent("");
+        newPage.setParentId(parentId);
         return confluence.storePage(newPage);
     }
+
 
     private boolean performWikiReplacements(AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener, ConfluenceSession confluence,
@@ -584,6 +603,40 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             this.setSites(req.bindJSONToList(ConfluenceSite.class, formData.get("sites")));
             save();
             return true;
+        }
+
+        public FormValidation doParentIdCheck(@QueryParameter final String siteName,
+                                              @QueryParameter final String spaceName, @QueryParameter final String parentId) {
+            ConfluenceSite site = this.getSiteByName(siteName);
+
+            if (hudson.Util.fixEmptyAndTrim(spaceName) == null
+                    || hudson.Util.fixEmptyAndTrim(parentId) == null) {
+                return FormValidation.ok();
+            }
+
+            Long parentIdL;
+            try {
+                 parentIdL = Long.valueOf(parentId);
+            } catch (NumberFormatException nfe) {
+                return FormValidation.error("The parent page id should be a numeric id.");
+            }
+
+            if (site == null) {
+                return FormValidation.error("Unknown site:" + siteName);
+            }
+
+            try {
+                ConfluenceSession confluence = site.createSession();
+                jenkins.plugins.confluence.soap.v2.RemotePage page = confluence.getPageV2(parentIdL);
+
+                if (page != null) {
+                    return FormValidation.ok("OK: " + page.getTitle());
+                }
+
+                return FormValidation.error("Page not found");
+            } catch (RemoteException re) {
+                return FormValidation.warning("Page not found. Check that the page still exists. ");
+            }
         }
 
         public FormValidation doPageNameCheck(@QueryParameter final String siteName,
