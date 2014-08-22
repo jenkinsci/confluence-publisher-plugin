@@ -25,6 +25,11 @@
             checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
     </f:entry>
 
+    <f:entry title="Parent Page ID" field="parentId">
+        <f:textbox
+            checkUrl="'descriptorByName/ConfluencePublisher/parentIdCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;parentId='+escape(this.value)" />
+    </f:entry>
+
     <f:entry title="Page Labels" field="labels" help="${descriptor.getHelpFile('labels')}">
         <f:textbox />
     </f:entry>
