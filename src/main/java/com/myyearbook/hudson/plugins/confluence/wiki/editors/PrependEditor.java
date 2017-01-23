@@ -24,7 +24,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * Represents a simple Wiki markup editor that prepends the content to the beginning of the page.
  * This editor requires no replacement tokens.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class PrependEditor extends MarkupEditor {
 

@@ -34,13 +34,11 @@ import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
 import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
 import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 import jenkins.plugins.confluence.soap.v1.RemoteSpace;
-import jenkins.plugins.confluence.soap.v2.InvalidSessionException;
-import jenkins.plugins.confluence.soap.v2.NotPermittedException;
 
 /**
  * Connection to Confluence
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class ConfluenceSession {
     /**
@@ -76,7 +74,6 @@ public class ConfluenceSession {
      * Get server info
      *
      * @return {@link RemoteServerInfo} instance
-     * @throws RemoteException
      */
     public RemoteServerInfo getServerInfo() {
         return this.serverInfo;
@@ -247,8 +244,6 @@ public class ConfluenceSession {
     * @return
  * @throws RemoteException
  * @throws jenkins.plugins.confluence.soap.v1.RemoteException
-    * @throws FileNotFoundException
-    * @throws IOException
     */
     public boolean removeAttachment(long pageId, RemoteAttachment attachment) throws jenkins.plugins.confluence.soap.v1.RemoteException, RemoteException{
         return this.service.removeAttachment(token, attachment.getPageId(), attachment.getFileName());

@@ -10,7 +10,6 @@ import org.jvnet.hudson.test.Bug;
 import org.mockito.Mock;
 
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.mockito.Mockito.*;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -26,12 +25,14 @@ public class BetweenTokensEditorTest extends TestCase {
     MarkupGenerator markupGenerator;
 
     @Before
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         initMocks(this);
     }
 
     @After
+    @Override
     protected void tearDown() throws Exception {
         super.tearDown();
     }

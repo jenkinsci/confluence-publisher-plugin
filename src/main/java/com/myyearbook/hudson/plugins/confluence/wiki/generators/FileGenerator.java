@@ -32,7 +32,7 @@ import org.kohsuke.stapler.export.Exported;
  * Content generator that reads the markup from a configured workspace file. Build variables will be
  * replaced.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class FileGenerator extends MarkupGenerator {
     @Exported

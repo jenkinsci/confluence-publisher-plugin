@@ -25,13 +25,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import jenkins.model.Jenkins;
 
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 /**
  * Abstract class representing a method of generating Confluence wiki markup.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public abstract class MarkupGenerator implements Describable<MarkupGenerator>, ExtensionPoint {
     public MarkupGenerator() {
@@ -39,8 +40,9 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return Hudson.getInstance().getDescriptor(getClass());
+        return Jenkins.getInstance().getDescriptor(getClass());
     }
 
     /**
@@ -49,7 +51,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @return
      */
     public static DescriptorExtensionList<MarkupGenerator, Descriptor<MarkupGenerator>> all() {
-        return Hudson.getInstance()
+        return Jenkins.getInstance()
                 .<MarkupGenerator, Descriptor<MarkupGenerator>> getDescriptorList(
                         MarkupGenerator.class);
     }

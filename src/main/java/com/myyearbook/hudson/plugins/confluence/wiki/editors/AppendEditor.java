@@ -24,7 +24,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * Represents a simple Wiki markup editor that appends the content to the end of the page. This
  * editor requires no replacement tokens.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class AppendEditor extends MarkupEditor {
     @DataBoundConstructor

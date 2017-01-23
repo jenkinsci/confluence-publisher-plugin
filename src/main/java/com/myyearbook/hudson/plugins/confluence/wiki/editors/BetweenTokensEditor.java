@@ -25,7 +25,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * Represents a token-based Wiki markup editor that inserts the new content between two (start/end)
  * replacement marker tokens.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class BetweenTokensEditor extends MarkupEditor {
     public final String startMarkerToken;

@@ -24,7 +24,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * Represents a simple Wiki markup editor that replaces the entire page content with the
  * newly-generated content. This editor requires no replacement tokens.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class EntirePageEditor extends MarkupEditor {
     @DataBoundConstructor
