@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <div>
   This plugin allows you to upload artifacts to a <a href="http://www.atlassian.com/software/confluence/">Confluence</a> wiki page.
 </div>
