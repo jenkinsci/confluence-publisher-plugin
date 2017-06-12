@@ -18,7 +18,7 @@ import java.net.URI;
 /**
  * Utility methods
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class Util {
     /** Relative path to resolve the XmlRpc endpoint URL */

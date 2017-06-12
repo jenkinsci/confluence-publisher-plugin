@@ -19,21 +19,20 @@ import hudson.model.BuildListener;
 import hudson.model.Describable;
 import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
+import jenkins.model.Jenkins;
 
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 /**
  * Base markup editor class
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public abstract class MarkupEditor implements Describable<MarkupEditor>, ExtensionPoint {
     /**
@@ -46,7 +45,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      *
      * @param generator Markup generator
      */
-    @DataBoundConstructor
+    //@DataBoundConstructor
     public MarkupEditor(final MarkupGenerator generator) {
         this.generator = generator;
     }
@@ -58,6 +57,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @param listener
      * @param content
      * @param isNewFormat
+     * @param remoteAttachments
      * @return
      * @throws TokenNotFoundException
      */
@@ -118,8 +118,9 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return Descriptor
      */
     @SuppressWarnings("unchecked")
+    @Override
     public Descriptor<MarkupEditor> getDescriptor() {
-        return Hudson.getInstance().getDescriptor(getClass());
+        return Jenkins.getInstance().getDescriptor(getClass());
     }
 
     /**
@@ -128,14 +129,14 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return List of descriptors
      */
     public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
-        return Hudson.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
+        return Jenkins.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
                 MarkupEditor.class);
     }
 
     /**
      * Descriptor for markup generators
      *
-     * @author Joe Hansche <jhansche@myyearbook.com>
+     * @author Joe Hansche jhansche@myyearbook.com
      */
     public static abstract class MarkupEditorDescriptor extends Descriptor<MarkupEditor> {
         /**
@@ -144,7 +145,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
          * @return List of MakrupGenerator Descriptors
          */
         public final List<Descriptor<MarkupGenerator>> getGenerators() {
-            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<Descriptor<MarkupGenerator>>();
+            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<>();
 
             for (Descriptor<MarkupGenerator> generator : MarkupGenerator.all()) {
                 generators.add(generator);
@@ -157,7 +158,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     /**
      * Exception thrown when the configured token cannot be found in the wiki markup.
      *
-     * @author Joe Hansche <jhansche@myyearbook.com>
+     * @author Joe Hansche jhansche@myyearbook.com
      */
     public static class TokenNotFoundException extends Exception {
         public TokenNotFoundException(final String message) {

@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import jenkins.model.Jenkins;
 
 import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
 import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
@@ -41,7 +42,7 @@ import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 /**
  * Represents an external Confluence installation and configuration needed to access it.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class ConfluenceSite implements Describable<ConfluenceSite> {
     /**
@@ -115,8 +116,9 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         return new ConfluenceSession(service, serviceV2, token, info);
     }
 
+    @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) Hudson.getInstance().getDescriptorOrDie(getClass());
+        return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
     public String getName() {
@@ -175,8 +177,9 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                 ServletException {
             // this can be used to check existence of any file in any URL, so
             // admin only
-            if (!Hudson.getInstance().hasPermission(Hudson.ADMINISTER))
+            if (!Jenkins.getInstance().hasPermission(Hudson.ADMINISTER)) {
                 return FormValidation.ok();
+            }
 
             final String newurl = hudson.Util.fixEmpty(url);
 

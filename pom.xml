@@ -20,8 +20,19 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.424</version>
+        <version>2.20</version>
+        <relativePath />
     </parent>
+	  
+    <properties>
+        <jenkins-test-harness.version>2.18</jenkins-test-harness.version>
+        <jenkins.version>1.609.1</jenkins.version>
+        <java.level>7</java.level>
+        <no-test-jar>false</no-test-jar>
+        <!-- Use the same configuration than before. -->
+        <findbugs.failOnError>false</findbugs.failOnError>
+    </properties>
+
 
     <artifactId>confluence-publisher</artifactId>
     <name>Confluence Publisher</name>

@@ -48,6 +48,7 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.naming.OperationNotSupportedException;
@@ -58,7 +59,7 @@ import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
 import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
 import jenkins.plugins.confluence.soap.v1.RemoteSpace;
 
-public class ConfluencePublisher extends Notifier implements Saveable {
+public final class ConfluencePublisher extends Notifier implements Saveable {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
     private final String siteName;
@@ -72,7 +73,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
     private final String pageName;
     private final long parentId;
 
-    private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<MarkupEditor, Descriptor<MarkupEditor>>(
+    private final DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<>(
             this);
 
     @DataBoundConstructor
@@ -143,6 +144,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         return labels;
     }
 
+    @Override
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.BUILD;
     }
@@ -187,7 +189,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         final long pageId = pageData.getId();
         FilePath ws = build.getWorkspace();
-        final List<RemoteAttachment> remoteAttachments = new ArrayList<RemoteAttachment>();
+        final List<RemoteAttachment> remoteAttachments = new ArrayList<>();
         if (ws == null) {
             // Possibly running on a slave that went down
             log(listener, "Workspace is unavailable.");
@@ -199,12 +201,12 @@ public class ConfluencePublisher extends Notifier implements Saveable {
 
         log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
 
-        final List<FilePath> files = new ArrayList<FilePath>();
+        final List<FilePath> files = new ArrayList<>();
 
         if (this.attachArchivedArtifacts) {
             final List<FilePath> archived = this.findArtifacts(build.getArtifactsDir());
 
-            if (archived.size() == 0) {
+            if (archived.isEmpty()) {
                 log(listener, "Attempting to attach the archived artifacts, but there are no"
                         + " archived artifacts from the job! Check job configuration...");
             } else {
@@ -362,7 +364,9 @@ public class ConfluencePublisher extends Notifier implements Saveable {
                 // if we haven't specified a parent, assign the Space home page as the parent
                 if (parentId == 0L) {
                     RemoteSpace space = confluence.getSpace(spaceName);
-                    if (space != null) parentId = space.getHomePage();
+                    if (space != null) {
+                        parentId = space.getHomePage();
+                    }
                 }
 
                 pageData = this.createPage(confluence, spaceName, pageName, parentId);
@@ -525,14 +529,16 @@ public class ConfluencePublisher extends Notifier implements Saveable {
      * @return
      */
     private List<FilePath> findArtifacts(File artifactsDir) {
-        ArrayList<FilePath> files = new ArrayList<FilePath>();
+        ArrayList<FilePath> files = new ArrayList<>();
 
         if (artifactsDir != null && artifactsDir.isDirectory()) {
             File[] listed = artifactsDir.listFiles();
 
             if (listed != null) {
                 for (File f : listed) {
-                    if (f == null) continue;
+                    if (f == null) {
+                        continue;
+                    }
 
                     if (f.isDirectory()) {
                         files.addAll(findArtifacts(f));
@@ -576,12 +582,13 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         return replaceAttachments;
     }
 
+    @Override
     public void save() throws IOException {
     }
 
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        private final List<ConfluenceSite> sites = new ArrayList<ConfluenceSite>();
+        private final List<ConfluenceSite> sites = new ArrayList<>();
 
         public DescriptorImpl() {
             super(ConfluencePublisher.class);
@@ -589,7 +596,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         public List<Descriptor<MarkupEditor>> getEditors() {
-            final List<Descriptor<MarkupEditor>> editors = new ArrayList<Descriptor<MarkupEditor>>();
+            final List<Descriptor<MarkupEditor>> editors = new ArrayList<>();
 
             for (Descriptor<MarkupEditor> editor : MarkupEditor.all()) {
                 editors.add(editor);
@@ -718,7 +725,7 @@ public class ConfluencePublisher extends Notifier implements Saveable {
         }
 
         public List<ConfluenceSite> getSites() {
-            return sites;
+            return Collections.unmodifiableList(sites);
         }
 
         @Override
@@ -753,18 +760,22 @@ public class ConfluencePublisher extends Notifier implements Saveable {
             this.value = value;
         }
 
+        @Override
         public String getIconFileName() {
             return null;
         }
 
+        @Override
         public String getDisplayName() {
             return null;
         }
 
+        @Override
         public String getUrlName() {
             return null;
         }
 
+        @Override
         public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
             env.put(name, value);
 		}

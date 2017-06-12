@@ -25,7 +25,7 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
  * Represents a token-based Wiki markup editor that inserts the new content immediately before the
  * replacement marker token.
  *
- * @author Joe Hansche <jhansche@myyearbook.com>
+ * @author Joe Hansche jhansche@myyearbook.com
  */
 public class BeforeTokenEditor extends MarkupEditor {
     public final String markerToken;
