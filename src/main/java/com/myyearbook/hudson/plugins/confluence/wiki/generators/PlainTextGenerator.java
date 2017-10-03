@@ -23,6 +23,7 @@ import java.util.List;
 
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -51,6 +52,7 @@ public class PlainTextGenerator extends MarkupGenerator {
     }
 
     @Extension
+    @Symbol("confluenceText")
     public static class DescriptorImpl extends Descriptor<MarkupGenerator> {
         @Override
         public String getDisplayName() {

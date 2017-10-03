@@ -25,6 +25,7 @@ import java.util.List;
 
 import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.Exported;
 
@@ -79,6 +80,7 @@ public class FileGenerator extends MarkupGenerator {
     }
 
     @Extension
+    @Symbol("confluenceFile")
     public static class DescriptorImpl extends Descriptor<MarkupGenerator> {
         @Override
         public String getDisplayName() {

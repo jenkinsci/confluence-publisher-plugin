@@ -39,10 +39,11 @@ import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.export.Exported;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,25 +66,36 @@ import jenkins.plugins.confluence.soap.v1.RemoteSpace;
 public final class ConfluencePublisher extends Notifier implements Saveable, SimpleBuildStep {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    private final String siteName;
-    private final boolean attachArchivedArtifacts;
-    private final boolean buildIfUnstable;
-    private final String fileSet;
-    private final boolean replaceAttachments;
-    private final String labels;
-
-    private final String spaceName;
-    private final String pageName;
-    private final long parentId;
-
-    private final DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<>(
+    private @Nonnull final String siteName;
+    private @Nonnull final String spaceName;
+    private @Nonnull final String pageName;
+    private boolean attachArchivedArtifacts;
+    private boolean buildIfUnstable;
+    private String fileSet;
+    private boolean replaceAttachments;
+    private String labels;
+    private long parentId;
+    private DescribableList<MarkupEditor, Descriptor<MarkupEditor>> editors = new DescribableList<>(
             this);
 
-    @DataBoundConstructor
+    @Deprecated
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
             final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
             final String fileSet, final List<MarkupEditor> editorList, final boolean replaceAttachments, final long parentId) throws IOException {
 
+        this(siteName, spaceName, pageName);
+
+        setParentId(parentId);
+        setLabels(labels);
+        setBuildIfUnstable(buildIfUnstable);
+        setAttachArchivedArtifacts(attachArchivedArtifacts);
+        setFileSet(fileSet);
+        setReplaceAttachments(replaceAttachments);
+        setEditorList(editorList);
+    }
+
+    @DataBoundConstructor
+    public ConfluencePublisher(@Nonnull String siteName, final @Nonnull String spaceName, final @Nonnull String pageName) {
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
 
@@ -95,13 +107,40 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         this.siteName = siteName;
         this.spaceName = spaceName;
         this.pageName = pageName;
-        this.parentId = parentId;
-        this.labels = labels;
-        this.buildIfUnstable = buildIfUnstable;
-        this.attachArchivedArtifacts = attachArchivedArtifacts;
-        this.fileSet = fileSet;
-        this.replaceAttachments = replaceAttachments;
+    }
 
+    @DataBoundSetter
+    public void setBuildIfUnstable(boolean buildIfUnstable) {
+        this.buildIfUnstable = buildIfUnstable;
+    }
+
+    @DataBoundSetter
+    public void setAttachArchivedArtifacts(boolean attachArchivedArtifacts) {
+        this.attachArchivedArtifacts = attachArchivedArtifacts;
+    }
+
+    @DataBoundSetter
+    public void setFileSet(final String fileSet) {
+        this.fileSet = StringUtils.isEmpty(fileSet) ? null : fileSet;
+    }
+
+    @DataBoundSetter
+    public void setReplaceAttachments(boolean replaceAttachments) {
+        this.replaceAttachments = replaceAttachments;
+    }
+
+    @DataBoundSetter
+    public void setLabels(final String labels) {
+        this.labels = StringUtils.isEmpty(labels) ? null : labels;
+    }
+
+    @DataBoundSetter
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
+    }
+
+    @DataBoundSetter
+    public void setEditorList(final List<MarkupEditor> editorList) {
         if (editorList != null) {
             this.editors.addAll(editorList);
         } else {
@@ -109,8 +148,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
     }
 
-    @Exported
-    public List<MarkupEditor> getConfiguredEditors() {
+    public List<MarkupEditor> getEditorList() {
         return this.editors.toList();
     }
 
@@ -129,7 +167,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the pageName
      */
-    public String getPageName() {
+    public @Nonnull String getPageName() {
         return pageName;
     }
 
@@ -175,14 +213,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the siteName
      */
-    public String getSiteName() {
+    public @Nonnull String getSiteName() {
         return siteName;
     }
 
     /**
      * @return the spaceName
      */
-    public String getSpaceName() {
+    public @Nonnull String getSpaceName() {
         return spaceName;
     }
 
@@ -261,7 +299,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
 	boolean shouldRemoveExistingAttachments = false;
 	List<RemoteAttachment> existingAtachments = null;
-        if(shouldReplaceAttachments()){
+        if(isReplaceAttachments()){
             RemoteAttachment[] attachments = confluence.getAttachments(pageId);
             if(attachments != null &&  attachments.length > 0){
                 existingAtachments = Arrays.asList(confluence.getAttachments(pageId));
@@ -560,20 +598,20 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the attachArchivedArtifacts
      */
-    public boolean shouldAttachArchivedArtifacts() {
+    public boolean isAttachArchivedArtifacts() {
         return attachArchivedArtifacts;
     }
 
     /**
      * @return the buildIfUnstable
      */
-    public boolean shouldBuildIfUnstable() {
+    public boolean isBuildIfUnstable() {
         return buildIfUnstable;
     }
     /**
      * @return the replaceAttachments
      */
-    public boolean shouldReplaceAttachments() {
+    public boolean isReplaceAttachments() {
         return replaceAttachments;
     }
 
@@ -582,7 +620,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+    @Symbol("publishConfluence")
+    public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
         private final List<ConfluenceSite> sites = new ArrayList<>();
 
         public DescriptorImpl() {

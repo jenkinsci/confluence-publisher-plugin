@@ -16,6 +16,7 @@ package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 import hudson.Extension;
 import hudson.model.TaskListener;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -47,6 +48,7 @@ public class AppendEditor extends MarkupEditor {
     }
 
     @Extension
+    @Symbol("confluenceAppendPage")
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
         @Override
         public String getDisplayName() {

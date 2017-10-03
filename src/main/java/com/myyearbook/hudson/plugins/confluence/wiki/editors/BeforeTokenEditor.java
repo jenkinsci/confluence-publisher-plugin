@@ -17,6 +17,7 @@ import hudson.Extension;
 import hudson.Util;
 import hudson.model.TaskListener;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -61,6 +62,7 @@ public class BeforeTokenEditor extends MarkupEditor {
     }
 
     @Extension
+    @Symbol("confluenceBeforeToken")
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
         @Override
         public String getDisplayName() {
