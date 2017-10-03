@@ -14,9 +14,10 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
 import hudson.Extension;
-import hudson.model.BuildListener;
-import hudson.model.AbstractBuild;
+import hudson.FilePath;
 import hudson.model.Descriptor;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 import java.util.List;
 
@@ -44,9 +45,9 @@ public class PlainTextGenerator extends MarkupGenerator {
     }
 
     @Override
-	public String generateMarkup(AbstractBuild<?, ?> build,
-			BuildListener listener, List<RemoteAttachment> remoteAttachments) {
-	return expand(build, listener, this.text, remoteAttachments);
+	public String generateMarkup(Run<?, ?> build, FilePath filePath,
+			TaskListener listener, List<RemoteAttachment> remoteAttachments) {
+	    return expand(build, listener, this.text, remoteAttachments);
     }
 
     @Extension

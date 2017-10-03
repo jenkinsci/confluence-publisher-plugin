@@ -16,9 +16,9 @@ package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
-import hudson.model.BuildListener;
-import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.util.List;
@@ -49,15 +49,15 @@ public class FileGenerator extends MarkupGenerator {
     }
 
     @Override
-	public String generateMarkup(AbstractBuild<?, ?> build,
-			BuildListener listener, List<RemoteAttachment> remoteAttachments) {
+	public String generateMarkup(Run<?, ?> build, FilePath filePath,
+			TaskListener listener, List<RemoteAttachment> remoteAttachments) {
         if (this.filename == null) {
             listener.getLogger().println(
                     "[confluence] No file is configured, generating empty markup.");
             return "";
         }
 
-        FilePath markupFile = build.getWorkspace().child(this.filename);
+        FilePath markupFile = filePath.child(this.filename);
 
         try {
             if (!markupFile.exists()) {

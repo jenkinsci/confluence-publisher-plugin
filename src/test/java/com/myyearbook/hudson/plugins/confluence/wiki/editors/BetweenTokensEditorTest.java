@@ -1,6 +1,6 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -20,7 +20,7 @@ public class BetweenTokensEditorTest extends TestCase {
     private static final String END_TOKEN = "%end%";
 
     @Mock
-    BuildListener buildListener;
+    TaskListener buildListener;
     @Mock
     MarkupGenerator markupGenerator;
 

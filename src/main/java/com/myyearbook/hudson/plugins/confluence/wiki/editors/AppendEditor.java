@@ -14,7 +14,7 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.Extension;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -33,7 +33,7 @@ public class AppendEditor extends MarkupEditor {
     }
 
     @Override
-    public String performEdits(final BuildListener listener, final String content,
+    public String performEdits(final TaskListener listener, final String content,
             final String generated, final boolean isNewFormat) {
         final StringBuilder sb = new StringBuilder(content);
         // Append the generated content to the end of the page

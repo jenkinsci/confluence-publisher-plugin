@@ -15,11 +15,11 @@ package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
-import hudson.model.BuildListener;
+import hudson.FilePath;
 import hudson.model.Describable;
-import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.net.URI;
@@ -63,7 +63,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param listener
      * @return
      */
-    public abstract String generateMarkup(AbstractBuild<?, ?> build, BuildListener listener, List<RemoteAttachment> remoteAttachments);
+    public abstract String generateMarkup(Run<?, ?> build, FilePath filePath, TaskListener listener, List<RemoteAttachment> remoteAttachments);
 
     /**
      * Expands replacement variables in the generated text
@@ -73,7 +73,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param generated
      * @return
      */
-    protected String expand(final AbstractBuild<?, ?> build, final BuildListener listener,
+    protected String expand(final Run<?, ?> build, final TaskListener listener,
             final String generated, List<RemoteAttachment> remoteAttachments) {
 	//If expansion failed, just return the unexpanded text
 	String result = generated;
@@ -96,7 +96,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param remoteAttachments
      * @return
      */
-    protected String expandAttachmentsLink(final BuildListener listener, String generated, List<RemoteAttachment> remoteAttachments ){
+    protected String expandAttachmentsLink(final TaskListener listener, String generated, List<RemoteAttachment> remoteAttachments ){
 	String result = generated;
 	for (int i = 0; i < remoteAttachments.size(); i++) {
 		RemoteAttachment attachment = remoteAttachments.get(i);
