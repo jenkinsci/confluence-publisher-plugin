@@ -36,6 +36,7 @@ import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import jenkins.tasks.SimpleBuildStep;
 
+import jenkins.util.VirtualFile;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
@@ -224,7 +225,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         return spaceName;
     }
 
-    protected List<RemoteAttachment> performAttachments(Run<?, ?> build, FilePath ws,
+    protected List<RemoteAttachment> performAttachments(Run build, FilePath ws,
             TaskListener listener, ConfluenceSession confluence,
             final RemotePageSummary pageData) throws IOException, InterruptedException {
 
@@ -241,18 +242,20 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
         log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
 
-        final List<FilePath> files = new ArrayList<>();
+        final List<VirtualFile> files = new ArrayList<>();
 
         if (this.attachArchivedArtifacts) {
-            final List<FilePath> archived = this.findArtifacts(build.getArtifactsDir());
+            final List<Run.Artifact> artifacts = build.getArtifacts();
 
-            if (archived.isEmpty()) {
+            if (artifacts.isEmpty()) {
                 log(listener, "Attempting to attach the archived artifacts, but there are no"
                         + " archived artifacts from the job! Check job configuration...");
             } else {
-                log(listener, "Found " + archived.size()
+                log(listener, "Found " + artifacts.size()
                         + " archived artifact(s) to upload to Confluence...");
-                files.addAll(archived);
+                for (Run.Artifact artifact : artifacts) {
+                    files.add(build.getArtifactManager().root().child(artifact.relativePath));
+                }
             }
         }
 
@@ -272,7 +275,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
                 for (FilePath file : workspaceFiles) {
                     if (!files.contains(file)) {
-                        files.add(file);
+                        files.add(file.toVirtualFile());
                     } else {
                         // Don't include the file twice if it's already in the
                         // list
@@ -297,32 +300,32 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
         log(listener, "Uploading " + files.size() + " file(s) to Confluence...");
 
-	boolean shouldRemoveExistingAttachments = false;
-	List<RemoteAttachment> existingAtachments = null;
-        if(isReplaceAttachments()){
+        boolean shouldRemoveExistingAttachments = false;
+        List<RemoteAttachment> existingAtachments = null;
+        if (isReplaceAttachments()) {
             RemoteAttachment[] attachments = confluence.getAttachments(pageId);
-            if(attachments != null &&  attachments.length > 0){
+            if (attachments != null &&  attachments.length > 0) {
                 existingAtachments = Arrays.asList(confluence.getAttachments(pageId));
                 shouldRemoveExistingAttachments = true;
             }
         }
 
-        for (FilePath file : files) {
+        for (VirtualFile file : files) {
             final String fileName = file.getName();
 
-            if(shouldRemoveExistingAttachments){
-		for (RemoteAttachment remoteAttachment : existingAtachments) {
-			if(remoteAttachment.getFileName().equals(fileName)){
-				try{
-					confluence.removeAttachment(pageId, remoteAttachment);
-					existingAtachments.remove(remoteAttachment);
-				log(listener, "Deleted existing " + remoteAttachment.getFileName() + " from Confluence before upload new...");
-					break;
-				}catch (RemoteException e) {
-					log(listener, "Deleting error: " + e.toString());
-					throw e;
-				}
-			}
+            if (shouldRemoveExistingAttachments) {
+                for (RemoteAttachment remoteAttachment : existingAtachments) {
+                    if (remoteAttachment.getFileName().equals(fileName)) {
+                        try {
+                            confluence.removeAttachment(pageId, remoteAttachment);
+                            existingAtachments.remove(remoteAttachment);
+                            log(listener, "Deleted existing " + remoteAttachment.getFileName() + " from Confluence before upload new...");
+                            break;
+                        } catch (RemoteException e) {
+                            log(listener, "Deleting error: " + e.toString());
+                            throw e;
+                        }
+                    }
                 }
             }
 
