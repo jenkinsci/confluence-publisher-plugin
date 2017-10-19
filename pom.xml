@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.20</version>
+        <version>2.36</version>
         <relativePath />
     </parent>
 	  
@@ -36,7 +36,7 @@
     <artifactId>confluence-publisher</artifactId>
     <name>Confluence Publisher</name>
     <description>Publish build artifacts to an Atlassian Confluence wiki</description>
-    <version>1.9-SNAPSHOT</version>
+    <version>2.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Confluence+Publisher+Plugin</url>
 
@@ -103,7 +103,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -113,17 +112,23 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <distributionManagement>
-        <repository>
-            <id>maven.jenkins-ci.org</id>
-            <url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
-        </repository>
-    </distributionManagement>
+	<distributionManagement>
+		<repository>
+			<uniqueVersion>false</uniqueVersion>
+			<id>maven.jenkins-ci.org</id>
+			<url>https://repo.jenkins-ci.org/releases/</url>
+		</repository>
+		<snapshotRepository>
+			<id>maven.jenkins-ci.org</id>
+			<url>https://repo.jenkins-ci.org/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/confluence-publisher-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/confluence-publisher-plugin.git</developerConnection>
         <url>http://github.com/jenkinsci/confluence-publisher-plugin</url>
+		<tag>HEAD</tag>
     </scm>
 
     <repositories>
