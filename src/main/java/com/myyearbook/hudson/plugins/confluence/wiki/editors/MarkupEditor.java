@@ -15,10 +15,11 @@ package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
-import hudson.model.BuildListener;
+import hudson.FilePath;
 import hudson.model.Describable;
-import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -61,10 +62,10 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return
      * @throws TokenNotFoundException
      */
-    public final String performReplacement(final AbstractBuild<?, ?> build,
-            final BuildListener listener, final String content, boolean isNewFormat, List<RemoteAttachment> remoteAttachments)
+    public final String performReplacement(final Run<?, ?> build, FilePath filePath,
+            final TaskListener listener, final String content, boolean isNewFormat, List<RemoteAttachment> remoteAttachments)
             throws TokenNotFoundException {
-        final String generated = generator.generateMarkup(build, listener, remoteAttachments);
+        final String generated = generator.generateMarkup(build, filePath, listener, remoteAttachments);
 
         // Perform the edit
         return this.performEdits(listener, content, generated, isNewFormat);
@@ -76,7 +77,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @param listener
      * @param message
      */
-    protected void log(BuildListener listener, String message) {
+    protected void log(TaskListener listener, String message) {
         listener.getLogger().println("[confluence] " + message);
     }
 
@@ -109,7 +110,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return
      * @throws TokenNotFoundException
      */
-    protected abstract String performEdits(final BuildListener listener, final String content,
+    protected abstract String performEdits(final TaskListener listener, final String content,
             final String generated, final boolean isNewFormat) throws TokenNotFoundException;
 
     /**

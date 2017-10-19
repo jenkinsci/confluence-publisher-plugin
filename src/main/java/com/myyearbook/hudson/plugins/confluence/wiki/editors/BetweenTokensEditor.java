@@ -15,8 +15,9 @@ package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -49,7 +50,7 @@ public class BetweenTokensEditor extends MarkupEditor {
      * @throws TokenNotFoundException
      */
     @Override
-    public String performEdits(final BuildListener listener, final String content,
+    public String performEdits(final TaskListener listener, final String content,
             final String generated, final boolean isNewFormat) throws TokenNotFoundException {
         final StringBuffer sb = new StringBuffer(content);
 
@@ -83,6 +84,7 @@ public class BetweenTokensEditor extends MarkupEditor {
     }
 
     @Extension
+    @Symbol("confluenceBetweenTokens")
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
         @Override
         public String getDisplayName() {

@@ -25,8 +25,7 @@
     </parent>
 	  
     <properties>
-        <jenkins-test-harness.version>2.18</jenkins-test-harness.version>
-        <jenkins.version>1.609.1</jenkins.version>
+        <jenkins.version>1.651.3</jenkins.version>
         <java.level>7</java.level>
         <no-test-jar>false</no-test-jar>
         <!-- Use the same configuration than before. -->
@@ -70,6 +69,16 @@
     </developers>
 
     <dependencies>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-cps</artifactId>
+            <version>1.13</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>structs</artifactId>
+            <version>1.2</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.axis</groupId>
             <artifactId>axis</artifactId>

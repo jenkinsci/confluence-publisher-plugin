@@ -14,8 +14,9 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.Extension;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
@@ -34,7 +35,7 @@ public class PrependEditor extends MarkupEditor {
     }
 
     @Override
-    public String performEdits(final BuildListener listener, final String content,
+    public String performEdits(final TaskListener listener, final String content,
             final String generated, final boolean isNewFormat) {
         final StringBuilder sb = new StringBuilder(content);
 
@@ -50,6 +51,7 @@ public class PrependEditor extends MarkupEditor {
     }
 
     @Extension
+    @Symbol("confluencePrependPage")
     public static final class DescriptorImpl extends MarkupEditorDescriptor {
         @Override
         public String getDisplayName() {

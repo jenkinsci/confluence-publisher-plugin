@@ -13,7 +13,7 @@
 
     <f:entry title="" field="buildIfUnstable">
         <f:checkbox title="Publish even if the build is unstable"
-            checked="${instance.shouldBuildIfUnstable()}" default="false" />
+            checked="${instance.isBuildIfUnstable()}" default="false" />
     </f:entry>
 
     <f:entry title="Space" field="spaceName">
@@ -37,12 +37,12 @@
 
     <f:entry title="Artifacts" field="attachArchivedArtifacts">
         <f:checkbox title="Attach archived artifacts to page"
-            checked="${instance.shouldAttachArchivedArtifacts()}" default="true" />
+            checked="${instance.isAttachArchivedArtifacts()}" default="true" />
     </f:entry>
 
 	<f:entry title="" field="replaceAttachments">
         <f:checkbox title="Replace file if it's already exist"
-            checked="${instance.shouldReplaceAttachments()}" default="false" />
+            checked="${instance.isReplaceAttachments()}" default="false" />
     </f:entry>
 
     <f:entry title="Other files to attach" field="fileSet">

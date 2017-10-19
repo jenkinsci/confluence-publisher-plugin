@@ -13,16 +13,8 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
-import hudson.FilePath;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.rmi.RemoteException;
 
 import javax.naming.OperationNotSupportedException;
@@ -34,6 +26,9 @@ import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
 import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
 import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 import jenkins.plugins.confluence.soap.v1.RemoteSpace;
+import jenkins.util.VirtualFile;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * Connection to Confluence
@@ -193,47 +188,12 @@ public class ConfluenceSession {
      * @throws IOException
      * @throws InterruptedException
      */
-    public RemoteAttachment addAttachment(long pageId, FilePath file, String contentType,
-            String comment) throws IOException, InterruptedException {
-        ByteArrayOutputStream baos;
-        baos = new ByteArrayOutputStream((int) file.length());
-        file.copyTo(baos);
-        byte[] data = baos.toByteArray();
-        return addAttachment(pageId, file.getName(), contentType, comment, data);
-    }
-
-    /**
-     * Attach the file
-     *
-     * @param pageId
-     * @param file
-     * @param contentType
-     * @param comment
-     * @return {@link RemoteAttachment} instance
-     * @throws IOException
-     * @throws FileNotFoundException
-     */
-    public RemoteAttachment addAttachment(long pageId, File file, String contentType, String comment)
-            throws FileNotFoundException, IOException {
-        final int len = (int) file.length();
-
-        final FileChannel in = new FileInputStream(file).getChannel();
-
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
-        final WritableByteChannel out = Channels.newChannel(baos);
-
-        try {
-            // Copy
-            in.transferTo(0, len, out);
-        } finally {
-            // Clean up
-            out.close();
-            in.close();
+    public RemoteAttachment addAttachment(long pageId, VirtualFile file, String contentType,
+                                          String comment) throws IOException, InterruptedException {
+        try (InputStream is = file.open()) {
+            byte[] data = IOUtils.toByteArray(is);
+            return addAttachment(pageId, file.getName(), contentType, comment, data);
         }
-
-        final byte[] data = baos.toByteArray();
-
-        return addAttachment(pageId, file.getName(), contentType, comment, data);
     }
 
    /**
