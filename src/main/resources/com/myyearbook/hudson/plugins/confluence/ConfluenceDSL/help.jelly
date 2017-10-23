@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core">
+    <p>
+        The <code>publishConfluence</code> step allows to conveniently configure the edition and publication of Confluence page.
+    </p>
+    <dl>
+        <dt><code>publishConfluence(siteName, spaceName, pageName[, ...]) {...}</code></dt>
+        <dd>
+            <p>
+                Configure the publication of a Confluence page. The closure provides a custom DSL which allows specifying
+                the editing steps to perform on the page.
+
+                The <code>siteName</code>, <code>spaceName</code> and <code>pageName</code> properties
+                must be specified in <code>publishConfluence</code> arguments.
+
+                Other properties can be specified either in arguments or in the closure.
+            </p>
+        </dd>
+
+        <p>
+            Here is an exemple of how to use this step:
+<pre>   publishConfluence(siteName:'foo.bar.org', spaceName:'FOO', pageName:'bar') {
+        append text:"This goes before"
+        beforeToken file:"stuff.txt", markerToken:"HERE"
+    }</pre>
+        </p>
+
+        <p>The following properties are required:</p>
+
+        <dt><code>siteName</code></dt>
+        <dd>
+            Choose the Confluence site to connect to.  These sites are configured in the
+            <a href="../../configure">Global Configuration</a>.
+        </dd>
+        <dt><code>spaceName</code></dt>
+        <dd>
+            Enter the Space name of the wiki page.  E.g., the string after "display" in the page's URL:
+            http://confluence.example.com/display/<u>Space</u>/Page.
+            If the Space name contains a build-time variable, the validity of the name cannot be verified
+            until build-time.
+        </dd>
+        <dt><code>pageName</code></dt>
+        <dd>Enter the Space name of the wiki page.  E.g., the string after the Space name in the page's URL:
+            http://confluence.example.com/display/Space/<u>Page</u>.
+            If the Space name or Page name contains a build-time variable, the validity of the page cannot
+            be verified until build-time.
+        </dd>
+
+        <p>The following optional properties are available:</p>
+
+        <dt><code>buildIfUnstable</code></dt>
+        <dd>
+            If checked, the plugin will continue publishing, even if the build was not successful.  In that case, you
+            can use the <tt>${BUILD_RESULT}</tt> build variable to indicate the current build result.
+            If this box is <b>not</b> checked, then <tt>${BUILD_RESULT}</tt> can always only be "<tt>SUCCESS</tt>".
+        </dd>
+        <dt><code>labels</code></dt>
+        <dd>Comma, or space, separated list of labels to apply to the Confluence page.</dd>
+        <dt><code>attachArchivedArtifacts</code></dt>
+        <dd>If checked, the plugin will automatically upload all of the archived artifacts (from the Artifact Archiver
+            plugin).  In that case, you don't need to reiterate the fileset pattern that is configured for the archiver.
+        </dd>
+        <dt><code>fileSet</code></dt>
+        <dd>
+            Can use wildcards like 'module/dist/**/*.zip'.
+            See <a href='http://ant.apache.org/manual/Types/fileset.html'>
+            the @includes of Ant fileset</a> for the exact format.
+            The base directory is <a href='ws/'>the workspace</a>.
+        </dd>
+        <dt><code>replaceAttachments</code></dt>
+        <dd>
+            If checked, the plugin will automatically replace the existing file
+            with the new file with the same name. For correct work jenkins user
+            should have permission to delete files from selected page.
+            <b>BE CAREFULE WITH THIS OPTION</b>
+        </dd>
+        <dt><code>parentId</code></dt>
+        <dd>
+            Enter the page ID of the parent wiki page.  You can find this identifier by accessing the parent page in question,
+            and then selecting "Page Information" or "Page History" from the Confluence <em>Tools</em> menu.  The pageId will
+            appear as a query parameter in the address bar.  e.g. (<code>pageId=1234567</code>)
+            If a parent is not specified, the space home will be used as the parent.
+            This field is used for creating new pages only.  If the page already exists, then parentId is discarded.
+        </dd>
+
+        <p>The following editing commands are available in the DSL:</p>
+
+        <dt><code>afterToken([file | text], markerToken)</code></dt>
+        <dd>Content is inserted after a configurable marker token.</dd>
+        <dt><code>appendPage([file | text])</code></dt>
+        <dd>Content is added to the very end of the page.</dd>
+        <dt><code>beforeToken([file | text], markerToken)</code></dt>
+        <dd>Content is inserted before a configurable marker token.</dd>
+        <dt><code>betweenTokens([file | text], startMarkerToken, endMarkerToken)</code></dt>
+        <dd>Content is inserted between two configurable start/end marker tokens. Existing content between the tokens is replaced.</dd>
+        <dt><code>prependPage([file | text])</code></dt>
+        <dd>Content is added to the very beginning of the page.</dd>
+        <dt><code>writePage([file | text])</code></dt>
+        <dd>The generated content will replace the entire page's content.  <b>Use with care</b></dd>
+    </dl>
+</j:jelly>
