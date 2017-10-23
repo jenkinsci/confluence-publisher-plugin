@@ -23,7 +23,7 @@
         <version>2.36</version>
         <relativePath />
     </parent>
-	  
+
     <properties>
         <jenkins.version>1.651.3</jenkins.version>
         <java.level>7</java.level>
@@ -64,6 +64,14 @@
             <email>jhansche@myyearbook.com</email>
             <roles>
                 <role>author</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>casz</id>
+            <name>Joseph Petersen</name>
+            <email>casz@github</email>
+            <roles>
+                <role>maintainer</role>
             </roles>
         </developer>
     </developers>
@@ -112,31 +120,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-	<distributionManagement>
-		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>maven.jenkins-ci.org</id>
-			<url>https://repo.jenkins-ci.org/releases/</url>
-		</repository>
-		<snapshotRepository>
-			<id>maven.jenkins-ci.org</id>
-			<url>https://repo.jenkins-ci.org/snapshots/</url>
-		</snapshotRepository>
-	</distributionManagement>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/confluence-publisher-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/confluence-publisher-plugin.git</developerConnection>
         <url>http://github.com/jenkinsci/confluence-publisher-plugin</url>
-		<tag>HEAD</tag>
+        <tag>HEAD</tag>
     </scm>
-
-    <repositories>
-        <repository>
-            <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>
@@ -178,6 +168,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </repository>
+    </repositories>
 
     <pluginRepositories>
         <pluginRepository>
