@@ -89,21 +89,27 @@ class Dsl implements Serializable {
             return
         }
 
-        // Editing commands must be called with named arguments
-        if (!args[0] instanceof Map)
+        Map namedArgs
+        if (args.length >= 1 && args[0] instanceof Map) {
+            // Editing commands called with named arguments: replace generator argument
+            namedArgs = args[0] as Map
+            MarkupGenerator.all().any { descriptor ->
+                def propertyName = getSymbolName(descriptor)
+                if (!propertyName || !namedArgs.containsKey(propertyName))
+                    return
+
+                def value = namedArgs[propertyName]
+                namedArgs.remove(propertyName)
+                namedArgs['generator'] = [$class: descriptor.clazz.name, "$propertyName": value]
+                return true
+            }
+        } else if (args.length == 1 && args[0] instanceof String) {
+            // Editing commands called with unnamed string argument: use plain text generator
+            namedArgs = [:]
+            namedArgs['generator'] = [$class: 'com.myyearbook.hudson.plugins.confluence.wiki.generators.PlainTextGenerator',
+                                      text: args[0]]
+        } else {
             throw new MissingMethodException(name, delegate, args)
-
-        // Replace generator argument
-        Map namedArgs = args[0] as Map
-        MarkupGenerator.all().any { descriptor ->
-            def propertyName = getSymbolName(descriptor)
-            if (!propertyName || !namedArgs.containsKey(propertyName))
-                return
-
-            def value = namedArgs[propertyName]
-            namedArgs.remove(propertyName)
-            namedArgs['generator'] = [$class:descriptor.clazz.name, "$propertyName":value]
-            return true
         }
 
         this.args['editorList'] << [$class:editorClassName, *:namedArgs]
