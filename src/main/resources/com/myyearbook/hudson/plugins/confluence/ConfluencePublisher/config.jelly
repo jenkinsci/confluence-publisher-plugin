@@ -51,7 +51,7 @@
 
     <f:entry title="Wiki Markup Replacements" help="${descriptor.getHelpFile('editorList')}">
         <f:hetero-list name="editorList" hasHeader="true"
-            descriptors="${descriptor.getEditors()}" items="${instance.configuredEditors}"
+            descriptors="${descriptor.getEditors()}" items="${instance.editorList}"
             addCaption="Add Replacement" />
     </f:entry>
 
