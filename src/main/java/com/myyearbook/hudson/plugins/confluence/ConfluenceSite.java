@@ -25,6 +25,7 @@ import hudson.util.Secret;
 import org.apache.axis.AxisFault;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,8 +35,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
-import jenkins.model.Jenkins;
 
+import jenkins.model.Jenkins;
 import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
 import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 
@@ -139,6 +140,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         /**
          * Checks if the user name and password are valid.
          */
+        @RequirePOST
         public FormValidation doLoginCheck(@QueryParameter String url,
                 @QueryParameter String username, @QueryParameter String password)
                 throws IOException {
@@ -148,6 +150,10 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             if (url == null) {// URL not entered yet
                 return FormValidation.ok();
             }
+
+            Jenkins jenkins = Jenkins.getInstance();
+            if (jenkins == null || !jenkins.hasPermission(Jenkins.ADMINISTER))
+                return FormValidation.ok();
 
             username = hudson.Util.fixEmpty(username);
             password = hudson.Util.fixEmpty(password);

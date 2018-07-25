@@ -13,7 +13,7 @@
 					</f:entry>
 
 					<f:entry title="Username" field="username">
-						<f:textbox checkMethod="post" />
+						<f:textbox />
 					</f:entry>
 
 					<f:entry title="Password" field="password">
