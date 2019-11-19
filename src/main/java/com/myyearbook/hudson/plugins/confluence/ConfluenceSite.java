@@ -13,32 +13,25 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
-import com.myyearbook.hudson.plugins.confluence.rpc.XmlRpcClient;
-
+import com.atlassian.confluence.rest.client.RestClientFactory;
+import com.atlassian.confluence.rest.client.authentication.AuthenticatedWebResourceProvider;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
-
-import org.apache.axis.AxisFault;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
-
-import jenkins.model.Jenkins;
-import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
-import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
 
 /**
  * Represents an external Confluence installation and configuration needed to access it.
@@ -89,32 +82,21 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
      * Creates a remote access session to this Confluence site
      *
      * @return {@link ConfluenceSession}
-     * @throws RemoteException
      */
-    public ConfluenceSession createSession() throws RemoteException {
-        final String rpcUrl = Util.confluenceUrlToSoapUrl(url.toExternalForm());
-        LOGGER.log(Level.FINEST, "[confluence] Using RPC url: " + rpcUrl);
+    public ConfluenceSession createSession() {
+        final String restUrl = url.toExternalForm();
+        LOGGER.log(Level.FINEST, "[confluence] Using Confluence base url: " + restUrl);
 
-        final ConfluenceSoapService service = XmlRpcClient.getInstance(rpcUrl);
-        final String token;
-
+        AuthenticatedWebResourceProvider authenticatedWebResourceProvider = new AuthenticatedWebResourceProvider(
+                RestClientFactory.newClient(),
+                restUrl,
+                "");
         if (username != null && password != null) {
-            token = service.login(username, Secret.toString(password));
-        } else {
-            // Empty string token means anonymous access
-            token = "";
+            authenticatedWebResourceProvider.setAuthContext(username, password.getPlainText().toCharArray());
         }
 
-        RemoteServerInfo info = service.getServerInfo(token);
 
-        jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2 = null;
-
-        if (info.getMajorVersion() >= 4) {
-            String v2Url = Util.confluenceUrlToSoapV2Url(url.toExternalForm());
-            serviceV2 = XmlRpcClient.getV2Instance(v2Url);
-        }
-
-        return new ConfluenceSession(service, serviceV2, token, info);
+        return new ConfluenceSession(authenticatedWebResourceProvider);
     }
 
     @Override
@@ -165,12 +147,9 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             final ConfluenceSite site = new ConfluenceSite(new URL(url), username, password);
 
             try {
-                site.createSession();
+                site.createSession().getCurrentUser();
                 return FormValidation.ok("SUCCESS");
-            } catch (AxisFault e) {
-                LOGGER.log(Level.WARNING, "Failed to login to Confluence at " + url, e);
-                return FormValidation.error(e, "Failed to login");
-            } catch (RemoteException e) {
+            } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to login to Confluence at " + url, e);
                 return FormValidation.error(e, "Failed to login");
             }

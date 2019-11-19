@@ -13,22 +13,38 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
-import java.io.InputStream;
+import com.atlassian.confluence.api.model.Expansion;
+import com.atlassian.confluence.api.model.content.AttachmentUpload;
+import com.atlassian.confluence.api.model.content.Content;
+import com.atlassian.confluence.api.model.content.Label;
+import com.atlassian.confluence.api.model.content.Space;
+import com.atlassian.confluence.api.model.content.id.ContentId;
+import com.atlassian.confluence.api.model.pagination.PageResponse;
+import com.atlassian.confluence.api.model.people.Person;
+import com.atlassian.confluence.api.service.exceptions.ServiceException;
+import com.atlassian.confluence.rest.client.*;
+import com.atlassian.confluence.rest.client.authentication.AuthenticatedWebResourceProvider;
+import com.atlassian.fugue.Option;
+import com.atlassian.util.concurrent.Promise;
+import com.google.common.collect.Collections2;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import jenkins.util.VirtualFile;
+import org.apache.commons.io.IOUtils;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
-
-import javax.naming.OperationNotSupportedException;
-
-import jenkins.plugins.confluence.soap.v1.ConfluenceSoapService;
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
-import jenkins.plugins.confluence.soap.v1.RemotePage;
-import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
-import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
-import jenkins.plugins.confluence.soap.v1.RemoteServerInfo;
-import jenkins.plugins.confluence.soap.v1.RemoteSpace;
-import jenkins.util.VirtualFile;
-
-import org.apache.commons.io.IOUtils;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Connection to Confluence
@@ -36,145 +52,121 @@ import org.apache.commons.io.IOUtils;
  * @author Joe Hansche jhansche@myyearbook.com
  */
 public class ConfluenceSession {
-    /**
-     * Confluence SOAP service
-     */
-    private final ConfluenceSoapService service;
-    private final jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2;
 
-    /**
-     * Authentication token, obtained from {@link ConfluenceSoapService#login(String,String)}
-     */
-    private final String token;
+    private final AuthenticatedWebResourceProvider authenticatedWebResourceProvider;
+    private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(3));
+    private final RemoteAttachmentServiceImpl attachmentService;
+    private final RemoteContentLabelService remoteContentLabelService;
+    private final RemoteContentPropertyService contentPropertyService;
+    private final RemoteContentService contentService;
+    private final RemoteChildContentService childContentService;
+    private final RemoteCQLSearchService cqlSearchService;
+    private final RemotePersonService remotePersonService;
+    private final RemoteSpaceService spaceService;
 
-    private final RemoteServerInfo serverInfo;
+    private Logger log = Logger.getLogger(ConfluenceSession.class.getName());
+    private Label.Prefix labelPrefix = Label.Prefix.global;
+    private static Expansion[] expansions = toExpansionsArray(
+            Content.Expansions.ANCESTORS,
+            Content.Expansions.BODY,
+            Content.Expansions.CHILDREN,
+            Content.Expansions.CONTAINER,
+            Content.Expansions.DESCENDANTS,
+            Content.Expansions.HISTORY,
+            Content.Expansions.METADATA,
+            Content.Expansions.OPERATIONS,
+            Content.Expansions.PERMISSIONS,
+            Content.Expansions.SPACE,
+            Content.Expansions.STATUS,
+            Content.Expansions.VERSION,
+            Content.Expansions.RESTRICTIONS,
+            "body.storage",
+            "children.comment.body.storage",
+            "children.comment.version",
+            "metadata.labels",
+            "metadata.currentuser",
+            "metadata.properties",
+            "metadata.labels",
+            "history.lastUpdated",
+            "history.previousVersion",
+            "history.contributors",
+            "history.nextVersion",
+            "restrictions.read.restrictions.user",
+            "restrictions.read.restrictions.group",
+            "restrictions.update.restrictions.user",
+            "restrictions.update.restrictions.group"
+    );
 
     /**
      * Constructor
      *
-     * @param service
-     * @param serviceV2
-     * @param token
+     * @param authenticatedWebResourceProvider
      */
-    /* package */ConfluenceSession(final ConfluenceSoapService service,
-            jenkins.plugins.confluence.soap.v2.ConfluenceSoapService serviceV2, final String token,
-            final RemoteServerInfo info) {
-        this.service = service;
-        this.serviceV2 = serviceV2;
-        this.token = token;
-        this.serverInfo = info;
-    }
-
-    /**
-     * Get server info
-     *
-     * @return {@link RemoteServerInfo} instance
-     */
-    public RemoteServerInfo getServerInfo() {
-        return this.serverInfo;
+    ConfluenceSession(final AuthenticatedWebResourceProvider authenticatedWebResourceProvider) {
+        this.authenticatedWebResourceProvider = authenticatedWebResourceProvider;
+        this.attachmentService = new RemoteAttachmentServiceImpl(authenticatedWebResourceProvider, executor);
+        this.remoteContentLabelService = new RemoteContentLabelServiceImpl(authenticatedWebResourceProvider, executor);
+        this.contentPropertyService = new RemoteContentPropertyServiceImpl(authenticatedWebResourceProvider, executor);
+        this.contentService = new RemoteContentServiceImpl(authenticatedWebResourceProvider, executor);
+        this.childContentService = new RemoteChildContentServiceImpl(authenticatedWebResourceProvider, executor);
+        this.cqlSearchService = new RemoteCQLSearchServiceImpl(authenticatedWebResourceProvider, executor);
+        this.remotePersonService = new RemotePersonServiceImpl(authenticatedWebResourceProvider, executor);
+        this.spaceService = new RemoteSpaceServiceImpl(authenticatedWebResourceProvider, executor);
     }
 
     /**
      * Get a Space by key name
      *
      * @param spaceKey
-     * @return {@link RemoteSpace} instance
-     * @throws RemoteException
+     * @return {@link Promise<Option<Space>>} instance
      */
-    public RemoteSpace getSpace(String spaceKey) throws RemoteException {
-        return this.service.getSpace(this.token, spaceKey);
+    public Option<Space> getSpace(String spaceKey) throws ServiceException {
+        return spaceService.find()
+                .withKeys(spaceKey).fetchOne().claim();
     }
 
     /**
-     * Get a Page by Space and Page key names
-     *
-     * @param spaceKey
-     * @param pageKey
-     * @return {@link RemotePage} instance
-     * @throws RemoteException
-     * @throws UnsupportedOperationException if attempting to call this method against a 4.0 or
-     * newer server
-     * @deprecated Calling this method on a Confluence 4.0+ server will result in a RemoteException
+     * Get a PageContent by Page key
+     * @param contentId
+     * @return {@link Optional<Content>} instance
      */
-    @Deprecated
-    public RemotePage getPage(String spaceKey, String pageKey) throws RemoteException {
-        if (isVersion4()) {
-            // This v1 API is broken in Confluence 4.0 and newer.
-            throw new UnsupportedOperationException(
-                    "This API is not supported on Confluence version 4.0 and newer.  Use getPageSummary()");
-        }
-
-        return this.service.getPage(this.token, spaceKey, pageKey);
+    public Optional<Content> getContent(String contentId) throws ServiceException {
+        return contentService.find(expansions)
+                .withId(ContentId.of(Long.valueOf(contentId)))
+                .fetch().claim();
     }
 
     /**
-     * This method is an attempt to bridge the gap between the deprecated v1 APIs and the as-yet
-     * unimplemented v2 APIs. The v1 getPage() API no longer works on version 4.0+ servers, but the
-     * v2 getPage() does. The v1 getPageSummary() is the same functionality as getPage(), minus the
-     * existing page content.
-     *
+     * Get a Content by spaceKey and Page title
      * @param spaceKey
-     * @param pageKey
-     * @return
-     * @throws RemoteException
+     * @param pageTitle
+     * @return {@link Optional<Content>} instance
      */
-    public RemotePageSummary getPageSummary(final String spaceKey, final String pageKey)
-            throws RemoteException {
-        if (!isVersion4()) {
-            // This method did not exist in the pre-4.0 v1 SOAP API
-            return this.getPage(spaceKey, pageKey);
-        }
-
-        return this.service.getPageSummary(this.token, spaceKey, pageKey);
+    public Optional<Content> getContent(String spaceKey, String pageTitle, boolean expanded) throws ServiceException {
+        return contentService.find(expanded ? expansions : null)
+                .withSpace(getSpace(spaceKey).getOrNull())
+                .withTitle(pageTitle)
+                .fetch().claim();
     }
 
-    public RemotePage storePage(final RemotePage page) throws RemoteException {
-        return this.service.storePage(this.token, page);
+    public Content createContent(final Content content) throws ServiceException {
+        return contentService.create(content).claim();
     }
 
-    public RemotePage updatePage(final RemotePage page, final RemotePageUpdateOptions options)
-            throws RemoteException {
-        return this.service.updatePage(this.token, page, options);
-    }
-
-    public jenkins.plugins.confluence.soap.v2.RemotePage updatePageV2(
-            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2,
-            jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions options)
-            throws RemoteException {
-        return this.serviceV2.updatePage(token, pageDataV2, options);
+    public Content updateContent(final Content content) throws ServiceException {
+        return contentService.update(content).claim();
     }
 
     /**
      * Get all attachments for a page
-     *
      * @param pageId
-     * @return Array of {@link RemoteAttachment}s
-     * @throws RemoteException
+     * @return List of {@link Content}
+     * @throws ServiceException
      */
-    public RemoteAttachment[] getAttachments(long pageId) throws RemoteException {
-        return this.service.getAttachments(this.token, pageId);
-    }
-
-    /**
-     * Attach the file
-     *
-     * @param pageId
-     * @param fileName
-     * @param contentType
-     * @param comment
-     * @param bytes
-     * @return {@link RemoteAttachment} instance that was created on the server
-     * @throws RemoteException
-     */
-    public RemoteAttachment addAttachment(long pageId, String fileName, String contentType,
-            String comment, byte[] bytes) throws RemoteException {
-        RemoteAttachment attachment = new RemoteAttachment();
-        attachment.setPageId(pageId);
-        attachment.setFileName(sanitizeFileName(fileName));
-        attachment.setFileSize(bytes.length);
-        attachment.setContentType(contentType);
-        attachment.setComment(comment);
-        return this.service.addAttachment(this.token, attachment, bytes);
+    public List<Content> getAttachments(long pageId) throws ServiceException {
+        return attachmentService.find(toExpansionsArray("body.storage"))
+                .withContainerId(ContentId.of(pageId))
+                .fetchMany(null).claim().getResults();
     }
 
     /**
@@ -184,67 +176,95 @@ public class ConfluenceSession {
      * @param file
      * @param contentType
      * @param comment
-     * @return {@link RemoteAttachment} instance
-     * @throws IOException
-     * @throws InterruptedException
+     * @return {@link PageResponse<Content>} instance that was created on the server
+     * @throws RemoteException
      */
-    public RemoteAttachment addAttachment(long pageId, VirtualFile file, String contentType,
-                                          String comment) throws IOException, InterruptedException {
-        try (InputStream is = file.open()) {
-            byte[] data = IOUtils.toByteArray(is);
-            return addAttachment(pageId, file.getName(), contentType, comment, data);
+    public PageResponse<Content> addAttachment(long pageId, VirtualFile file, String contentType,
+                                               String comment) throws ServiceException {
+        try {
+            File uploadFile = File.createTempFile("conf-upload-", null);
+            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(uploadFile.getAbsoluteFile().getPath()))) {
+                bos.write(IOUtils.toByteArray(file.open()));
+                bos.flush();
+                AttachmentUpload attachment = new AttachmentUpload(uploadFile, file.getName(), contentType, comment, false);
+                return attachmentService
+                        .addAttachments(ContentId.of(pageId), Arrays.asList(attachment))
+                        .claim();
+            } catch (IOException ie) {
+                log.severe(ie.getMessage());
+            } finally {
+                uploadFile.delete();
+                //UNSURE IF REQUIRED HERE
+                uploadFile.deleteOnExit();
+            }
+        } catch (ServiceException se) {
+            log.severe(se.getMessage());
+            throw se;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return null;
     }
 
-   /**
-    * Remove attachment
-    *
-    * @param pageId
-    * @param attachment
-    * @return
- * @throws RemoteException
- * @throws jenkins.plugins.confluence.soap.v1.RemoteException
-    */
-    public boolean removeAttachment(long pageId, RemoteAttachment attachment) throws jenkins.plugins.confluence.soap.v1.RemoteException, RemoteException{
-        return this.service.removeAttachment(token, attachment.getPageId(), attachment.getFileName());
-    }
 
     /**
-     * Sanitize the attached filename, per Confluence restrictions
+     * Remove attachment
      *
-     * @param fileName
-     * @return
+     * @param attachment
+     * @throws ServiceException
      */
-    public static String sanitizeFileName(String fileName) {
-        if (fileName == null) {
-            return null;
-        }
-        return hudson.Util.fixEmptyAndTrim(fileName.replace('+', '_').replace('&', '_'));
+    public void removeAttachment(Content attachment) throws ServiceException {
+        attachmentService.delete(attachment).claim();
     }
+
 
     /**
-     * Returns true if this server is version 4.0 or newer.
+     * Add's labels to content, removing duplicates.
      *
-     * @return
+     * @param labels comma separated labels string.
+     * @return boolean success status.
+     * @throws ServiceException
      */
-    public boolean isVersion4() {
-        return this.serverInfo.getMajorVersion() >= 4;
-    }
+    public boolean addLabels(long id, String labels) throws ServiceException {
+        List<String> stringLabels = Arrays.asList(labels.toLowerCase().split(","));
 
-    public void doV4Test(long id) throws RemoteException {
-        jenkins.plugins.confluence.soap.v2.RemotePage page = this.serviceV2.getPage(token, id);
-        System.out.println("Content: " + page.getContent());
-    }
+        Function<List<String>, List<Label>> CONVERT_TO_LABELS = (strings) -> strings.stream()
+                .map(string -> new Label(Label.builder(string).prefix(labelPrefix)))
+                .collect(Collectors.toList());
 
-    public jenkins.plugins.confluence.soap.v2.RemotePage getPageV2(long id) throws RemoteException {
-        return this.serviceV2.getPage(token, id);
-    }
+        BiFunction<List<Label>, List<Label>, List<Label>> FILTER_EXISTING_LABELS = (existingLabels, newLabels) -> {
+            List<String> existingNames = existingLabels.stream()
+                    .map(Label::getLabel).map(String::toLowerCase).collect(Collectors.toList());
+            return newLabels.stream()
+                    .filter((l) -> !existingNames.contains(l.getLabel().toLowerCase()))
+                    .collect(Collectors.toList());
+        };
 
-    public boolean addLabels(long id, String labels) throws RemoteException, OperationNotSupportedException {
-        if (this.serviceV2 == null) {
-            throw new OperationNotSupportedException("Labels are supported as of Confluence v4 and later.");
-        } else {
-            return this.serviceV2.addLabelByName(token, labels, id);
+        List<Label> newLabels = CONVERT_TO_LABELS.apply(stringLabels);
+        List<Label> existingLabels = getLabels(id).getResults();
+        newLabels = FILTER_EXISTING_LABELS.apply(existingLabels, newLabels);
+
+        if (!newLabels.isEmpty()) {
+            remoteContentLabelService.addLabels(ContentId.of(id), newLabels).claim();
         }
+
+        List<String> remoteLabels = getLabels(id).getResults().stream()
+                .map(l -> l.getLabel()).collect(Collectors.toList());
+
+        return remoteLabels.containsAll(stringLabels);
+
+    }
+
+    public PageResponse<Label> getLabels(long id) {
+        return (PageResponse<Label>) remoteContentLabelService
+                .getLabels(ContentId.of(id), Arrays.asList(labelPrefix), null).claim();
+    }
+
+    public Person getCurrentUser() {
+        return remotePersonService.getCurrentUser().claim();
+    }
+
+    public static Expansion[] toExpansionsArray(String... expansions) {
+        return Collections2.transform(Arrays.asList(expansions), Expansion.AS_EXPANSION).toArray(new Expansion[expansions.length]);
     }
 }
