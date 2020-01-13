@@ -1,11 +1,11 @@
 /*
  * Copyright 2011-2012 MeetMe, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -13,21 +13,17 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
+import com.atlassian.confluence.api.model.content.*;
+import com.atlassian.confluence.api.model.pagination.PageResponse;
+import com.atlassian.confluence.api.service.exceptions.ServiceException;
+import com.atlassian.fugue.Option;
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor;
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
-
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Descriptor;
-import hudson.model.EnvironmentContributingAction;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.Saveable;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -35,10 +31,8 @@ import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import jenkins.tasks.SimpleBuildStep;
-
 import jenkins.util.VirtualFile;
 import net.sf.json.JSONObject;
-
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -46,23 +40,14 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.naming.OperationNotSupportedException;
-
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
-import jenkins.plugins.confluence.soap.v1.RemotePage;
-import jenkins.plugins.confluence.soap.v1.RemotePageSummary;
-import jenkins.plugins.confluence.soap.v1.RemotePageUpdateOptions;
-import jenkins.plugins.confluence.soap.v1.RemoteSpace;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public final class ConfluencePublisher extends Notifier implements Saveable, SimpleBuildStep {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
@@ -81,8 +66,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     @Deprecated
     public ConfluencePublisher(String siteName, final boolean buildIfUnstable,
-            final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
-            final String fileSet, final List<MarkupEditor> editorList, final boolean replaceAttachments, final long parentId) throws IOException {
+                               final String spaceName, final String pageName, final String labels, final boolean attachArchivedArtifacts,
+                               final String fileSet, final List<MarkupEditor> editorList, final boolean replaceAttachments, final long parentId) {
 
         this(siteName, spaceName, pageName);
 
@@ -225,12 +210,12 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         return spaceName;
     }
 
-    protected List<RemoteAttachment> performAttachments(Run build, FilePath ws,
-            TaskListener listener, ConfluenceSession confluence,
-            final RemotePageSummary pageData) throws IOException, InterruptedException {
+    protected List<Content> performAttachments(Run build, FilePath ws,
+                                               TaskListener listener, ConfluenceSession confluence,
+                                               final Content pageContent) throws IOException, InterruptedException {
 
-        final long pageId = pageData.getId();
-        final List<RemoteAttachment> remoteAttachments = new ArrayList<>();
+        final long pageId = pageContent.getId().asLong();
+        final List<Content> remoteAttachments = new ArrayList<>();
         if (ws == null) {
             // Possibly running on a slave that went down
             log(listener, "Workspace is unavailable.");
@@ -240,7 +225,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         String attachmentComment = build.getEnvironment(listener).expand(
                 "Published from Jenkins build: $BUILD_URL");
 
-        log(listener, "Uploading attachments to Confluence page: " + pageData.getUrl());
+        log(listener, "Uploading attachments to Confluence page: " + pageContent.getTitle());
 
         final List<VirtualFile> files = new ArrayList<>();
 
@@ -287,7 +272,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
                 String msg = null;
 
                 try {
-                    msg = ws.validateAntFileMask(artifacts);
+                    msg = ws.validateAntFileMask(artifacts, FilePath.VALIDATE_ANT_FILE_MASK_BOUND);
                 } catch (Exception e) {
                     log(listener, "" + e.getMessage());
                 }
@@ -301,11 +286,11 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         log(listener, "Uploading " + files.size() + " file(s) to Confluence...");
 
         boolean shouldRemoveExistingAttachments = false;
-        List<RemoteAttachment> existingAtachments = null;
+        List<Content> existingAttachments = new ArrayList<>();
         if (isReplaceAttachments()) {
-            RemoteAttachment[] attachments = confluence.getAttachments(pageId);
-            if (attachments != null &&  attachments.length > 0) {
-                existingAtachments = Arrays.asList(confluence.getAttachments(pageId));
+            List<Content> attachments = confluence.getAttachments(pageId);
+            if (attachments != null && attachments.size() > 0) {
+                existingAttachments.addAll(attachments);
                 shouldRemoveExistingAttachments = true;
             }
         }
@@ -314,20 +299,21 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
             final String fileName = file.getName();
 
             if (shouldRemoveExistingAttachments) {
-                for (RemoteAttachment remoteAttachment : existingAtachments) {
-                    if (remoteAttachment.getFileName().equals(fileName)) {
+                for (Content remoteAttachment : existingAttachments) {
+                    if (remoteAttachment.getTitle().equals(fileName)) {
                         try {
-                            confluence.removeAttachment(pageId, remoteAttachment);
-                            existingAtachments.remove(remoteAttachment);
-                            log(listener, "Deleted existing " + remoteAttachment.getFileName() + " from Confluence before upload new...");
+                            confluence.removeAttachment(remoteAttachment);
+                            existingAttachments.remove(remoteAttachment);
+                            log(listener, "Deleted existing " + remoteAttachment.getTitle() + " from Confluence before upload new...");
                             break;
-                        } catch (RemoteException e) {
+                        } catch (ServiceException e) {
                             log(listener, "Deleting error: " + e.toString());
                             throw e;
                         }
                     }
                 }
             }
+
 
             String contentType = URLConnection.guessContentTypeFromName(fileName);
 
@@ -339,16 +325,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
             log(listener, " - Uploading file: " + fileName + " (" + contentType + ")");
 
             try {
-                final RemoteAttachment result = confluence.addAttachment(pageId, file,
+                final PageResponse<Content> result = confluence.addAttachment(pageId, file,
                         contentType, attachmentComment);
-                remoteAttachments.add(result);
-                log(listener, "   done: " + result.getUrl());
-            } catch (IOException ioe) {
+                remoteAttachments.addAll(result.getResults());
+                log(listener, "   done: " + result.getResults().stream()
+                        .map(Content::getTitle).collect(Collectors.joining(", ")));
+            } catch (ServiceException se) {
                 listener.error("Unable to upload file...");
-                ioe.printStackTrace(listener.getLogger());
-            } catch (InterruptedException ie) {
-                listener.error("Unable to upload file...");
-                ie.printStackTrace(listener.getLogger());
+                se.printStackTrace(listener.getLogger());
             }
         }
         log(listener, "Done");
@@ -358,7 +342,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     @Override
     public void perform(@Nonnull Run<?, ?> build, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
-            @Nonnull TaskListener listener) throws InterruptedException, IOException {
+                        @Nonnull TaskListener listener) throws InterruptedException, IOException {
         boolean result = true;
         ConfluenceSite site = getSite();
 
@@ -385,6 +369,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         String pageName = this.pageName;
         long parentId = this.parentId;
 
+        log(listener, "ParentId: " + parentId);
+
         try {
             spaceName = build.getEnvironment(listener).expand(spaceName);
             pageName = build.getEnvironment(listener).expand(pageName);
@@ -394,162 +380,235 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
             e.printStackTrace(listener.getLogger());
         }
 
-        RemotePageSummary pageData;
+        Content pageContent;
 
         try {
-            pageData = confluence.getPageSummary(spaceName, pageName);
-        } catch (RemoteException e) {
+            String spaceAndPageNames = String.format("%s/%s", spaceName, pageName);
+            pageContent = confluence.getContent(spaceName, pageName, true).orElseThrow(() -> new ServiceException(String.format("Page at \"%s\" not found!", spaceAndPageNames)));
+        } catch (ServiceException e) {
             // Still shouldn't fail the job, so just dump this to the console and keep going (true).
+            log(listener, e.getMessage());
             log(listener, "Unable to locate page: " + spaceName + "/" + pageName + ".  Attempting to create the page now...");
 
             try {
                 // if we haven't specified a parent, assign the Space home page as the parent
                 if (parentId == 0L) {
-                    RemoteSpace space = confluence.getSpace(spaceName);
+                    Space space = confluence.getSpace(spaceName).getOrNull();
                     if (space != null) {
-                        parentId = space.getHomePage();
+                        parentId = space.getId();
                     }
                 }
 
-                pageData = this.createPage(confluence, spaceName, pageName, parentId);
+                pageContent = this.createPage(confluence, spaceName, pageName, parentId);
 
-            } catch (RemoteException exc2) {
+            } catch (ServiceException exc) {
                 log(listener, "Page could not be created!  Aborting edits...");
-                e.printStackTrace(listener.getLogger());
+                exc.printStackTrace(listener.getLogger());
                 return;
-            }
-        }
-        
-        // Add the page labels
-        String labels = this.labels;
-        if (StringUtils.isNotBlank(labels)) {
-            try {
-                String expandedLabels = build.getEnvironment(listener).expand(labels);
-                result &= confluence.addLabels(pageData.getId(), expandedLabels);
-
-            } catch (OperationNotSupportedException e) {
-                e.printStackTrace(listener.getLogger());
-            } catch (IOException e) {
-                e.printStackTrace(listener.getLogger());
-            } catch (InterruptedException e) {
-                e.printStackTrace(listener.getLogger());
             }
         }
 
         // Perform attachment uploads
-        List<RemoteAttachment> remoteAttachments = null;
+        List<Content> remoteAttachments = null;
         try {
-            remoteAttachments = this.performAttachments(build, filePath, listener, confluence, pageData);
+            remoteAttachments = this.performAttachments(build, filePath, listener, confluence, pageContent);
         } catch (IOException e) {
             e.printStackTrace(listener.getLogger());
         } catch (InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
-        // Wiki editing is only supported in versions prior to 4.0
         if (!editors.isEmpty()) {
-            if (!confluence.isVersion4() && pageData instanceof RemotePage) {
-                // Perform wiki replacements
-                try {
-                    result &= this.performWikiReplacements(build, filePath, listener, confluence,
-                            (RemotePage) pageData, remoteAttachments);
-                } catch (IOException e) {
-                    e.printStackTrace(listener.getLogger());
-                } catch (InterruptedException e) {
-                    e.printStackTrace(listener.getLogger());
-                }
-            } else {
-                log(listener, "EXPERIMENTAL: performing storage format edits on Confluence 4.0");
+            // Perform wiki replacements
+            try {
+                result &= this.performWikiReplacements(build, filePath, listener, confluence,
+                        pageContent, remoteAttachments);
+            } catch (IOException e) {
+                e.printStackTrace(listener.getLogger());
+            } catch (InterruptedException e) {
+                e.printStackTrace(listener.getLogger());
+            }
 
-                // Must use the v2 API for this.
-                jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2 = confluence
-                        .getPageV2(pageData.getId());
+        }
 
-                try {
-                    result &= this.performWikiReplacements(build, filePath, listener, confluence,
-                            pageDataV2, remoteAttachments);
-                } catch (IOException e) {
-                    e.printStackTrace(listener.getLogger());
-                } catch (InterruptedException e) {
-                    e.printStackTrace(listener.getLogger());
-                }
+        // Add the page labels
+        String labels = this.labels;
+        if (StringUtils.isNotBlank(labels)) {
+            try {
+                String expandedLabels = build.getEnvironment(listener).expand(labels);
+                result &= confluence.addLabels(pageContent.getId().asLong(), expandedLabels);
+
+            } catch (ServiceException se) {
+                log(listener, se.getMessage());
             }
         }
+        if (result) {
+            try {
+                result &= performEditComment(build, listener, confluence, pageContent);
+            } catch (ServiceException se) {
+                log(listener, se.getMessage());
+            }
+        }
+
     }
 
     /**
      * Creates a new Page in Confluence.
-     * 
+     *
      * @param confluence
      * @param spaceName
      * @param pageName
      * @return The resulting Page
      * @throws RemoteException
      */
-    private RemotePage createPage(ConfluenceSession confluence, String spaceName, String pageName, long parentId)
-            throws RemoteException {
-        RemotePage newPage = new RemotePage();
-        newPage.setTitle(pageName);
-        newPage.setSpace(spaceName);
-        newPage.setContent("");
-        newPage.setParentId(parentId);
-        return confluence.storePage(newPage);
+    private Content createPage(ConfluenceSession confluence, String spaceName, String pageName, long parentId)
+            throws ServiceException {
+        Content parentContent = confluence.getContent(String.valueOf(parentId))
+                .orElseThrow(() -> new ServiceException("Can't find parent content with Id:" + parentId));
+        Content.ContentBuilder newPage = Content.builder()
+                .title(pageName)
+                .type(ContentType.PAGE)
+                .space(spaceName)
+                .body(ContentBody.contentBodyBuilder().build())
+                .parent(parentContent);
+        return confluence.createContent(newPage.build());
     }
 
+
     private boolean performWikiReplacements(Run<?, ?> build, FilePath filePath, TaskListener listener,
-			ConfluenceSession confluence,
-            jenkins.plugins.confluence.soap.v2.RemotePage pageDataV2, List<RemoteAttachment> remoteAttachments)
-			throws IOException, InterruptedException {
+                                            ConfluenceSession confluence,
+                                            Content pageContent, List<Content> remoteAttachments)
+            throws IOException, InterruptedException {
 
+        boolean isUpdated = false;
+        //Ugly Hack, though required here. DO NOT REMOVE, otherwise  Content.ContentBuilder.build() will fail.
+        Consumer<Map<ContentType, PageResponse<Content>>> SANITIZE_NESTED_CONTENT_MAP = (m) ->
+                m.entrySet().stream().filter(e -> e.getValue() == null).map(e -> e.getKey())
+                        .collect(Collectors.toList()).stream().forEach(k -> m.remove(k));
+
+        SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getChildren());
+        SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getDescendants());
+
+        // Get current content and edit.
+        String originContent = pageContent.getBody().get(ContentRepresentation.STORAGE).getValue();
+
+        String contentEdited = performEdits(build, filePath, listener, originContent, remoteAttachments);
+        //XHTML -> HTML self closing tag adjustment
+        contentEdited = contentEdited.replaceAll(" /", "/");
+
+        // Now set the replacement contentBody
+        ContentBody contentBody = ContentBody.contentBodyBuilder()
+                .representation(ContentRepresentation.STORAGE)
+                .value(contentEdited)
+                .build();
+        List<Content> ancestors = pageContent.getAncestors();
+        Content updatedContent = Content.builder(pageContent)
+                .version(pageContent.getVersion().nextBuilder().build())
+                .body(contentBody)
+                .parent(ancestors.get(ancestors.size() - 1))
+                .build();
+
+        //post updated content.
+        Content results = confluence.updateContent(updatedContent);
+
+        //Check if remote content is updated.
+        Optional<Content> remoteResults =
+                confluence.getContent(pageContent.getSpace().getKey(), pageContent.getTitle(), true);
+        if (remoteResults.isPresent()) {
+            isUpdated = (remoteResults.get().getVersion().getNumber() == results.getVersion().getNumber()) ? true : false;
+        }
+
+        return isUpdated;
+    }
+
+    private boolean performEditComment(Run<?, ?> build, TaskListener listener,
+                                       ConfluenceSession confluence, Content pageContent)
+            throws IOException, InterruptedException, ServiceException {
+        boolean isUpdated = false;
         final String editComment = build.getEnvironment(listener).expand(
-                "Published from Jenkins build: $BUILD_URL");
-        final jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions options = new jenkins.plugins.confluence.soap.v2.RemotePageUpdateOptions(
-                false, editComment);
+                "Published from Jenkins build: <a href=\"$BUILD_URL\">$BUILD_URL</a>");
 
-        // Get current content
-        String content = performEdits(build, filePath, listener, pageDataV2.getContent(), true, remoteAttachments);
+        Optional<Content> previousComment = Optional.empty();
+        List<Content> cl = new ArrayList<>();
 
-        // Now set the replacement content
-        pageDataV2.setContent(content);
-        confluence.updatePageV2(pageDataV2, options);
-        return true;
+        Optional.ofNullable(pageContent.getChildren()).ifPresent(cn ->
+                Optional.ofNullable(cn.get(ContentType.COMMENT)).ifPresent(cm ->
+                        Optional.ofNullable(cm.getResults()).ifPresent(lc ->
+                                cl.addAll(lc)
+                        )
+                )
+        );
+
+        if (!cl.isEmpty()) {
+            previousComment = cl.stream()
+                    .filter(c -> c.getBody().get(ContentRepresentation.STORAGE)
+                            .getValue().contains(editComment.split(":")[0]))
+                    .sorted(Comparator.comparing(c -> c.getVersion().getNumber())
+                    ).findFirst();
+        }
+
+        if (previousComment.isPresent()) {
+            //Edit comment Content
+            Content comment = Content.builder()
+                    .type(ContentType.COMMENT)
+                    .version(previousComment.get().getVersion().nextBuilder().build())
+                    .id(previousComment.get().getId())
+                    .container(pageContent)
+                    .title("Re: " + pageContent.getTitle())
+                    .extension("location", "footer")
+                    .status(ContentStatus.CURRENT)
+                    .body(ContentBody.contentBodyBuilder()
+                            .representation(ContentRepresentation.STORAGE)
+                            .value(editComment)
+                            .build())
+                    .build();
+            confluence.updateContent(comment);
+        } else {
+            //Post new comment.
+            createComment(confluence, pageContent, editComment);
+
+        }
+        //Check if remote content is updated.
+        Optional<Content> remoteResults =
+                confluence.getContent(pageContent.getSpace().getKey(), pageContent.getTitle(), true);
+        if (remoteResults.isPresent()) {
+            isUpdated = remoteResults.get().getChildren().get(ContentType.COMMENT)
+                    .getResults().stream().map(r -> r.getBody().get(ContentRepresentation.STORAGE).getValue())
+                    .collect(Collectors.toList())
+                    .contains(editComment);
+        }
+        return isUpdated;
     }
 
     /**
+     * Creates a new Comment to Confluence page.
      *
-     * @param build
-     * @param listener
      * @param confluence
-     * @param pageData
-     * @param remoteAttachments
-     * @return
-     * @throws IOException
-     * @throws InterruptedException
+     * @param parentContent
+     * @param commentText
+     * @return The resulting comment Content
+     * @throws RemoteException
      */
-    protected boolean performWikiReplacements(Run<?, ?> build, FilePath filePath, TaskListener listener,
-            ConfluenceSession confluence, RemotePage pageData, List<RemoteAttachment> remoteAttachments)
-            throws IOException, InterruptedException {
-
-        final String editComment = build.getEnvironment(listener).expand(
-                "Published from Jenkins build: $BUILD_URL");
-        final RemotePageUpdateOptions options = new RemotePageUpdateOptions(false, editComment);
-
-        // Get current content
-        String content = performEdits(build, filePath, listener, pageData.getContent(), false, remoteAttachments);
-
-        // Now set the replacement content
-        pageData.setContent(content);
-        confluence.updatePage(pageData, options);
-        return true;
+    private Content createComment(ConfluenceSession confluence, Content parentContent, String commentText)
+            throws ServiceException {
+        Content.ContentBuilder newComment = Content.builder()
+                .title("Re: " + parentContent.getTitle())
+                .body(ContentBody.contentBodyBuilder()
+                        .representation(ContentRepresentation.STORAGE)
+                        .value(commentText)
+                        .build())
+                .container(parentContent)
+                .type(ContentType.COMMENT);
+        return confluence.createContent(newComment.build());
     }
 
     private String performEdits(final Run<?, ?> build, FilePath filePath, final TaskListener listener,
-            String content, final boolean isNewFormat, List<RemoteAttachment> remoteAttachments) {
+                                String content, List<Content> remoteAttachments) {
         for (MarkupEditor editor : this.editors) {
             log(listener, "Performing wiki edits: " + editor.getDescriptor().getDisplayName());
 
             try {
-                content = editor.performReplacement(build, filePath, listener, content, isNewFormat, remoteAttachments);
+                content = editor.performReplacement(build, filePath, listener, content, true, remoteAttachments);
             } catch (TokenNotFoundException e) {
                 log(listener, "ERROR while performing replacement: " + e.getMessage());
             }
@@ -560,7 +619,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     /**
      * Recursively scan a directory, returning all files encountered
-     * 
+     *
      * @param artifactsDir
      * @return
      */
@@ -590,7 +649,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     /**
      * Log helper
-     * 
+     *
      * @param listener
      * @param message
      */
@@ -611,6 +670,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     public boolean isBuildIfUnstable() {
         return buildIfUnstable;
     }
+
     /**
      * @return the replaceAttachments
      */
@@ -619,7 +679,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @Override
-    public void save() throws IOException {
+    public void save() {
     }
 
     @Extension
@@ -671,14 +731,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
             try {
                 ConfluenceSession confluence = site.createSession();
-                jenkins.plugins.confluence.soap.v2.RemotePage page = confluence.getPageV2(parentIdL);
+                Content page = confluence.getContent(String.valueOf(parentIdL)).orElseThrow(() -> new ServiceException("Page content is NULL"));
 
                 if (page != null) {
                     return FormValidation.ok("OK: " + page.getTitle());
                 }
 
                 return FormValidation.error("Page not found");
-            } catch (RemoteException re) {
+            } catch (ServiceException re) {
                 return FormValidation.warning("Page not found. Check that the page still exists. ");
             }
         }
@@ -698,14 +758,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
             try {
                 ConfluenceSession confluence = site.createSession();
-                RemotePageSummary page = confluence.getPageSummary(spaceName, pageName);
+                Content page = confluence.getContent(spaceName, pageName, false).orElse(null);
 
                 if (page != null) {
                     return FormValidation.ok("OK: " + page.getTitle());
                 }
 
                 return FormValidation.error("Page not found");
-            } catch (RemoteException re) {
+            } catch (ServiceException re) {
                 if (StringUtils.contains(pageName, '$') || StringUtils.contains(spaceName, '$')) {
                     return FormValidation
                             .warning("Unable to determine if the page exists because it contains build-time parameters.");
@@ -730,14 +790,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
             try {
                 ConfluenceSession confluence = site.createSession();
-                RemoteSpace space = confluence.getSpace(spaceName);
+                Option<Space> space = confluence.getSpace(spaceName);
 
-                if (space != null) {
-                    return FormValidation.ok("OK: " + space.getName());
+                if (!space.isEmpty()) {
+                    return FormValidation.ok("OK: " + space.get().getName());
                 }
 
                 return FormValidation.error("Space not found");
-            } catch (RemoteException re) {
+            } catch (ServiceException re) {
                 if (StringUtils.contains(spaceName, '$')) {
                     return FormValidation
                             .warning("Unable to determine if the space exists because it contains build-time parameters.");
@@ -772,8 +832,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
 
         @Override
-        public Publisher newInstance(StaplerRequest req, JSONObject formData)
-                throws hudson.model.Descriptor.FormException {
+        public Publisher newInstance(StaplerRequest req, JSONObject formData) {
             return req.bindJSON(ConfluencePublisher.class, formData);
         }
 
@@ -785,7 +844,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     /**
      * Build action that is capable of inserting arbitrary KVPs into the EnvVars.
-     * 
+     *
      * @author jhansche
      */
     public static class EnvVarAction implements EnvironmentContributingAction {

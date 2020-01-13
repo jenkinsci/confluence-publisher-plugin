@@ -13,6 +13,9 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
+import com.atlassian.confluence.api.model.content.AttachmentUpload;
+import com.atlassian.confluence.api.model.content.Content;
+import com.atlassian.confluence.api.model.link.LinkType;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
@@ -26,8 +29,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import jenkins.model.Jenkins;
-
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 /**
  * Abstract class representing a method of generating Confluence wiki markup.
@@ -63,7 +64,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param listener
      * @return
      */
-    public abstract String generateMarkup(Run<?, ?> build, FilePath filePath, TaskListener listener, List<RemoteAttachment> remoteAttachments);
+    public abstract String generateMarkup(Run<?, ?> build, FilePath filePath, TaskListener listener, List<Content> remoteAttachments);
 
     /**
      * Expands replacement variables in the generated text
@@ -74,7 +75,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @return
      */
     protected String expand(final Run<?, ?> build, final TaskListener listener,
-            final String generated, List<RemoteAttachment> remoteAttachments) {
+            final String generated, List<Content> remoteAttachments) {
 	//If expansion failed, just return the unexpanded text
 	String result = generated;
         try {
@@ -96,13 +97,14 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @param remoteAttachments
      * @return
      */
-    protected String expandAttachmentsLink(final TaskListener listener, String generated, List<RemoteAttachment> remoteAttachments ){
+    protected String expandAttachmentsLink(final TaskListener listener, String generated, List<Content> remoteAttachments ){
 	String result = generated;
 	for (int i = 0; i < remoteAttachments.size(); i++) {
-		RemoteAttachment attachment = remoteAttachments.get(i);
+		Content attachment = remoteAttachments.get(i);
 			try {
-				String url = attachment.getUrl();
-				String href = url.substring(url.indexOf(new URI(url).getPath()));
+				String url = attachment.getLinks().get(LinkType.DOWNLOAD).getPath();
+                String href = url.substring(url.indexOf(new URI(url).getPath()))
+                        .replaceAll("&", "&amp;");
 				result = result.replace("$LINK["+i+"]", href);
 			} catch (URISyntaxException e) {
 	            e.printStackTrace(listener.getLogger());

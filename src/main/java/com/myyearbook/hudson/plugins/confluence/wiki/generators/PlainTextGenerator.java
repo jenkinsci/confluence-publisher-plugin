@@ -13,6 +13,8 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
+import com.atlassian.confluence.api.model.content.AttachmentUpload;
+import com.atlassian.confluence.api.model.content.Content;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Descriptor;
@@ -20,8 +22,6 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 
 import java.util.List;
-
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -47,7 +47,7 @@ public class PlainTextGenerator extends MarkupGenerator {
 
     @Override
 	public String generateMarkup(Run<?, ?> build, FilePath filePath,
-			TaskListener listener, List<RemoteAttachment> remoteAttachments) {
+			TaskListener listener, List<Content> remoteAttachments) {
 	    return expand(build, listener, this.text, remoteAttachments);
     }
 

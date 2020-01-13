@@ -13,6 +13,8 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
+import com.atlassian.confluence.api.model.content.AttachmentUpload;
+import com.atlassian.confluence.api.model.content.Content;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
@@ -27,8 +29,6 @@ import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
 import java.util.ArrayList;
 import java.util.List;
 import jenkins.model.Jenkins;
-
-import jenkins.plugins.confluence.soap.v1.RemoteAttachment;
 
 /**
  * Base markup editor class
@@ -63,7 +63,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @throws TokenNotFoundException
      */
     public final String performReplacement(final Run<?, ?> build, FilePath filePath,
-            final TaskListener listener, final String content, boolean isNewFormat, List<RemoteAttachment> remoteAttachments)
+            final TaskListener listener, final String content, boolean isNewFormat, List<Content> remoteAttachments)
             throws TokenNotFoundException {
         final String generated = generator.generateMarkup(build, filePath, listener, remoteAttachments);
 
