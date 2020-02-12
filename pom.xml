@@ -50,7 +50,7 @@
     <description>Publish build artifacts to an Atlassian Confluence wiki</description>
     <version>2.0.6-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <url>http://wiki.jenkins-ci.org/display/JENKINS/Confluence+Publisher+Plugin</url>
+    <url>https://github.com/jenkinsci/confluence-publisher-plugin/</url>
 
     <organization>
         <name>MeetMe, Inc.</name>
