@@ -11,7 +11,10 @@ _Feb 12, 2020_
 -   [JENKINS-47309](https://issues.jenkins-ci.org/browse/JENKINS-47309)
     Switch to the Confluence REST API, as the SOAP API is now
     [deprecated](https://developer.atlassian.com/server/confluence/confluence-xml-rpc-and-soap-apis/).
-    *NOTE*: The REST API is supported as of Confluence 5.5. If you
+    ([#15](https://github.com/jenkinsci/confluence-publisher-plugin/pull/15)
+    [@mslipets](https://github.com/mslipets))
+    
+    **NOTE**: The REST API is supported as of Confluence 5.5. If you
     use an older version of Confluence, you should continue using a
     previous version of this plugin.
 
