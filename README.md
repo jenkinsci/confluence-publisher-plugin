@@ -2,6 +2,12 @@
 |-----------------------------------------------------------------------------------------------------------------------|
 | View Confluence Publisher [on the plugin site](https://plugins.jenkins.io/confluence-publisher) for more information. |
 
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/confluence-publisher.svg)](https://plugins.jenkins.io/confluence-publisher)
+[![GitHub release](https://img.shields.io/github/release/jenkinsci/confluence-publisher-plugin.svg?label=release)](https://github.com/jenkinsci/confluence-publisher-plugin/releases/latest)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/confluence-publisher.svg?color=blue)](https://plugins.jenkins.io/confluence-publisher)
+
+
+
 Older versions of this plugin may not be safe to use. Please review the
 following warnings before using an older version:
 
