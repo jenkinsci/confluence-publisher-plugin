@@ -36,6 +36,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.List;
@@ -184,12 +185,14 @@ public class ConfluenceSession {
         try {
             File uploadFile = File.createTempFile("conf-upload-", null);
             try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(uploadFile.getAbsoluteFile().getPath()))) {
-                bos.write(IOUtils.toByteArray(file.open()));
-                bos.flush();
-                AttachmentUpload attachment = new AttachmentUpload(uploadFile, file.getName(), contentType, comment, false);
-                return attachmentService
-                        .addAttachments(ContentId.of(pageId), Arrays.asList(attachment))
-                        .claim();
+                try (InputStream inSt = file.open()) {
+                    bos.write(IOUtils.toByteArray(inSt));
+                    bos.flush();
+                    AttachmentUpload attachment = new AttachmentUpload(uploadFile, file.getName(), contentType, comment, false);
+                    return attachmentService
+                            .addAttachments(ContentId.of(pageId), Arrays.asList(attachment))
+                            .claim();
+                }
             } catch (IOException ie) {
                 log.severe(ie.getMessage());
             } finally {
