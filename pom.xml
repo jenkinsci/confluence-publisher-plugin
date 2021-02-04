@@ -79,9 +79,9 @@
             </roles>
         </developer>
         <developer>
-            <id>casz</id>
+            <id>jetersen</id>
             <name>Joseph Petersen</name>
-            <email>casz@github</email>
+            <email>jetersen@github</email>
             <roles>
                 <role>maintainer</role>
             </roles>
