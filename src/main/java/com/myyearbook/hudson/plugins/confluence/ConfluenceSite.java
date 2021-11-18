@@ -101,7 +101,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
 
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) Jenkins.getInstance().getDescriptorOrDie(getClass());
+        return (DescriptorImpl) Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     public String getName() {
@@ -133,7 +133,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                 return FormValidation.ok();
             }
 
-            Jenkins jenkins = Jenkins.getInstance();
+            Jenkins jenkins = Jenkins.getInstanceOrNull();
             if (jenkins == null || !jenkins.hasPermission(Jenkins.ADMINISTER))
                 return FormValidation.ok();
 
@@ -162,7 +162,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                 ServletException {
             // this can be used to check existence of any file in any URL, so
             // admin only
-            if (!Jenkins.getInstance().hasPermission(Hudson.ADMINISTER)) {
+            if (!Jenkins.get().hasPermission(Hudson.ADMINISTER)) {
                 return FormValidation.ok();
             }
 

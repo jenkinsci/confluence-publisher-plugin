@@ -22,7 +22,21 @@ import com.atlassian.confluence.api.model.content.id.ContentId;
 import com.atlassian.confluence.api.model.pagination.PageResponse;
 import com.atlassian.confluence.api.model.people.Person;
 import com.atlassian.confluence.api.service.exceptions.ServiceException;
-import com.atlassian.confluence.rest.client.*;
+import com.atlassian.confluence.rest.client.RemoteAttachmentServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteCQLSearchService;
+import com.atlassian.confluence.rest.client.RemoteCQLSearchServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteChildContentService;
+import com.atlassian.confluence.rest.client.RemoteChildContentServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteContentLabelService;
+import com.atlassian.confluence.rest.client.RemoteContentLabelServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteContentPropertyService;
+import com.atlassian.confluence.rest.client.RemoteContentPropertyServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteContentService;
+import com.atlassian.confluence.rest.client.RemoteContentServiceImpl;
+import com.atlassian.confluence.rest.client.RemotePersonService;
+import com.atlassian.confluence.rest.client.RemotePersonServiceImpl;
+import com.atlassian.confluence.rest.client.RemoteSpaceService;
+import com.atlassian.confluence.rest.client.RemoteSpaceServiceImpl;
 import com.atlassian.confluence.rest.client.authentication.AuthenticatedWebResourceProvider;
 import com.atlassian.fugue.Option;
 import com.atlassian.util.concurrent.Promise;
@@ -38,8 +52,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -134,7 +148,7 @@ public class ConfluenceSession {
      */
     public Optional<Content> getContent(String contentId) throws ServiceException {
         return contentService.find(expansions)
-                .withId(ContentId.of(Long.valueOf(contentId)))
+                .withId(ContentId.of(Long.parseLong(contentId)))
                 .fetch().claim();
     }
 
@@ -191,7 +205,7 @@ public class ConfluenceSession {
                     bos.flush();
                     AttachmentUpload attachment = new AttachmentUpload(uploadFile, file.getName(), contentType, comment, false);
                     return attachmentService
-                            .addAttachments(ContentId.of(pageId), Arrays.asList(attachment))
+                            .addAttachments(ContentId.of(pageId), Collections.singletonList(attachment))
                             .claim();
                 }
             } catch (IOException ie) {
@@ -253,7 +267,7 @@ public class ConfluenceSession {
         }
 
         List<String> remoteLabels = getLabels(id).getResults().stream()
-                .map(l -> l.getLabel()).collect(Collectors.toList());
+                .map(Label::getLabel).collect(Collectors.toList());
 
         return remoteLabels.containsAll(stringLabels);
 
@@ -262,7 +276,7 @@ public class ConfluenceSession {
     @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "false positive")
     public PageResponse<Label> getLabels(long id) {
         return (PageResponse<Label>) remoteContentLabelService
-                .getLabels(ContentId.of(id), Arrays.asList(labelPrefix), null).claim();
+                .getLabels(ContentId.of(id), Collections.singletonList(labelPrefix), null).claim();
     }
 
     public Person getCurrentUser() {

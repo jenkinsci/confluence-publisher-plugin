@@ -13,7 +13,6 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
-import com.atlassian.confluence.api.model.content.AttachmentUpload;
 import com.atlassian.confluence.api.model.content.Content;
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
@@ -121,7 +120,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<MarkupEditor> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        return Jenkins.get().getDescriptor(getClass());
     }
 
     /**
@@ -130,8 +129,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return List of descriptors
      */
     public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
-        return Jenkins.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
-                MarkupEditor.class);
+        return Jenkins.get().getDescriptorList(MarkupEditor.class);
     }
 
     /**
@@ -146,11 +144,8 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
          * @return List of MakrupGenerator Descriptors
          */
         public final List<Descriptor<MarkupGenerator>> getGenerators() {
-            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<>();
 
-            for (Descriptor<MarkupGenerator> generator : MarkupGenerator.all()) {
-                generators.add(generator);
-            }
+            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<>(MarkupGenerator.all());
 
             return generators;
         }

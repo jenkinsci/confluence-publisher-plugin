@@ -67,10 +67,7 @@ public class FileGenerator extends MarkupGenerator {
                 // Read the file and use its contents
                 return expand(build, listener, markupFile.readToString(), remoteAttachments);
             }
-        } catch (IOException e) {
-            e.printStackTrace(listener.error("[confluence] Error reading input file "
-                    + this.filename));
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.error("[confluence] Error reading input file "
                     + this.filename));
         }

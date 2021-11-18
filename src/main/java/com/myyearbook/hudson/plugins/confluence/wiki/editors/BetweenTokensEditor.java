@@ -52,7 +52,7 @@ public class BetweenTokensEditor extends MarkupEditor {
     @Override
     public String performEdits(final TaskListener listener, final String content,
             final String generated, final boolean isNewFormat) throws TokenNotFoundException {
-        final StringBuffer sb = new StringBuffer(content);
+        final StringBuilder sb = new StringBuilder(content);
 
         final int markerStart = content.indexOf(startMarkerToken);
         final int contentStart = markerStart + startMarkerToken.length();

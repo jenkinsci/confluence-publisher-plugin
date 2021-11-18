@@ -13,7 +13,6 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
-import com.atlassian.confluence.api.model.content.AttachmentUpload;
 import com.atlassian.confluence.api.model.content.Content;
 import com.atlassian.confluence.api.model.link.LinkType;
 import hudson.DescriptorExtensionList;
@@ -43,7 +42,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        return Jenkins.get().getDescriptor(getClass());
     }
 
     /**
@@ -52,9 +51,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @return
      */
     public static DescriptorExtensionList<MarkupGenerator, Descriptor<MarkupGenerator>> all() {
-        return Jenkins.getInstance()
-                .<MarkupGenerator, Descriptor<MarkupGenerator>> getDescriptorList(
-                        MarkupGenerator.class);
+        return Jenkins.get().getDescriptorList(MarkupGenerator.class);
     }
 
     /**
@@ -81,9 +78,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
         try {
 		result = expandAttachmentsLink(listener, generated,remoteAttachments);
 		result = build.getEnvironment(listener).expand(result);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
