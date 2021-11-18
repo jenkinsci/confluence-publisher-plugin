@@ -253,7 +253,7 @@ public class ConfluenceSession {
         }
 
         List<String> remoteLabels = getLabels(id).getResults().stream()
-                .map(l -> l.getLabel()).collect(Collectors.toList());
+                .map(Label::getLabel).collect(Collectors.toList());
 
         return remoteLabels.containsAll(stringLabels);
 

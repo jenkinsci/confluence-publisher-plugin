@@ -471,8 +471,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         boolean isUpdated = false;
         //Ugly Hack, though required here. DO NOT REMOVE, otherwise  Content.ContentBuilder.build() will fail.
         Consumer<Map<ContentType, PageResponse<Content>>> SANITIZE_NESTED_CONTENT_MAP = (m) ->
-                m.entrySet().stream().filter(e -> e.getValue() == null).map(e -> e.getKey())
-                        .collect(Collectors.toList()).stream().forEach(k -> m.remove(k));
+                m.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey)
+                        .collect(Collectors.toList()).stream().forEach(m::remove);
 
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getChildren());
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getDescendants());
@@ -521,8 +521,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
         Optional.ofNullable(pageContent.getChildren()).ifPresent(cn ->
                 Optional.ofNullable(cn.get(ContentType.COMMENT)).ifPresent(cm ->
-                        Optional.ofNullable(cm.getResults()).ifPresent(lc ->
-                                cl.addAll(lc)
+                        Optional.ofNullable(cm.getResults()).ifPresent(cl::addAll
                         )
                 )
         );
