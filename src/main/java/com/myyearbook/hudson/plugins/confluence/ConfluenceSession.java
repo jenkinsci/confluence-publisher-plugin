@@ -134,7 +134,7 @@ public class ConfluenceSession {
      */
     public Optional<Content> getContent(String contentId) throws ServiceException {
         return contentService.find(expansions)
-                .withId(ContentId.of(Long.valueOf(contentId)))
+                .withId(ContentId.of(Long.parseLong(contentId)))
                 .fetch().claim();
     }
 
