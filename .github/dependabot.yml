@@ -9,6 +9,8 @@ updates:
       - "jetersen"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: com.atlassian.confluence:confluence-rest-client
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
