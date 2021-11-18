@@ -29,6 +29,7 @@ import com.atlassian.util.concurrent.Promise;
 import com.google.common.collect.Collections2;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jenkins.util.VirtualFile;
 import org.apache.commons.io.IOUtils;
 
@@ -119,7 +120,7 @@ public class ConfluenceSession {
      * Get a Space by key name
      *
      * @param spaceKey
-     * @return {@link Promise<Option<Space>>} instance
+     * @return {@link Promise} instance
      */
     public Option<Space> getSpace(String spaceKey) throws ServiceException {
         return spaceService.find()
@@ -129,7 +130,7 @@ public class ConfluenceSession {
     /**
      * Get a PageContent by Page key
      * @param contentId
-     * @return {@link Optional<Content>} instance
+     * @return {@link Optional} instance
      */
     public Optional<Content> getContent(String contentId) throws ServiceException {
         return contentService.find(expansions)
@@ -141,7 +142,7 @@ public class ConfluenceSession {
      * Get a Content by spaceKey and Page title
      * @param spaceKey
      * @param pageTitle
-     * @return {@link Optional<Content>} instance
+     * @return {@link Optional} instance
      */
     public Optional<Content> getContent(String spaceKey, String pageTitle, boolean expanded) throws ServiceException {
         return contentService.find(expanded ? expansions : null)
@@ -164,6 +165,7 @@ public class ConfluenceSession {
      * @return List of {@link Content}
      * @throws ServiceException
      */
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "false positive")
     public List<Content> getAttachments(long pageId) throws ServiceException {
         return attachmentService.find(toExpansionsArray("body.storage"))
                 .withContainerId(ContentId.of(pageId))
@@ -177,8 +179,7 @@ public class ConfluenceSession {
      * @param file
      * @param contentType
      * @param comment
-     * @return {@link PageResponse<Content>} instance that was created on the server
-     * @throws RemoteException
+     * @return {@link PageResponse} instance that was created on the server
      */
     public PageResponse<Content> addAttachment(long pageId, VirtualFile file, String contentType,
                                                String comment) throws ServiceException {
@@ -258,6 +259,7 @@ public class ConfluenceSession {
 
     }
 
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "false positive")
     public PageResponse<Label> getLabels(long id) {
         return (PageResponse<Label>) remoteContentLabelService
                 .getLabels(ContentId.of(id), Arrays.asList(labelPrefix), null).claim();
