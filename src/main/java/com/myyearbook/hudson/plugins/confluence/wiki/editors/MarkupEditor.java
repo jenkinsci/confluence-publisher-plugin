@@ -145,11 +145,8 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
          * @return List of MakrupGenerator Descriptors
          */
         public final List<Descriptor<MarkupGenerator>> getGenerators() {
-            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<>();
 
-            for (Descriptor<MarkupGenerator> generator : MarkupGenerator.all()) {
-                generators.add(generator);
-            }
+            final List<Descriptor<MarkupGenerator>> generators = new ArrayList<>(MarkupGenerator.all());
 
             return generators;
         }

@@ -680,11 +680,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
 
         public List<Descriptor<MarkupEditor>> getEditors() {
-            final List<Descriptor<MarkupEditor>> editors = new ArrayList<>();
 
-            for (Descriptor<MarkupEditor> editor : MarkupEditor.all()) {
-                editors.add(editor);
-            }
+            final List<Descriptor<MarkupEditor>> editors = new ArrayList<>(MarkupEditor.all());
 
             return editors;
         }
