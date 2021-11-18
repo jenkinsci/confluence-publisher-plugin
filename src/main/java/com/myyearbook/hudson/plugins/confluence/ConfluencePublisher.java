@@ -472,7 +472,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         //Ugly Hack, though required here. DO NOT REMOVE, otherwise  Content.ContentBuilder.build() will fail.
         Consumer<Map<ContentType, PageResponse<Content>>> SANITIZE_NESTED_CONTENT_MAP = (m) ->
                 m.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey)
-                        .collect(Collectors.toList()).stream().forEach(m::remove);
+                        .collect(Collectors.toList()).forEach(m::remove);
 
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getChildren());
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getDescendants());
@@ -525,10 +525,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
         if (!cl.isEmpty()) {
             previousComment = cl.stream()
-                    .filter(c -> c.getBody().get(ContentRepresentation.STORAGE)
-                            .getValue().contains(editComment.split(":")[0]))
-                    .sorted(Comparator.comparing(c -> c.getVersion().getNumber())
-                    ).findFirst();
+                    .filter(c -> c.getBody().get(ContentRepresentation.STORAGE).getValue().contains(editComment.split(":")[0]))
+                    .min(Comparator.comparing(c -> c.getVersion().getNumber()));
         }
 
         if (previousComment.isPresent()) {
