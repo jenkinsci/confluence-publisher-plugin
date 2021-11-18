@@ -26,8 +26,7 @@
     </parent>
 
     <properties>
-        <revision>2.0.7</revision>
-        <changelist>-SNAPSHOT</changelist>
+        <changelist>9999-SNAPSHOT</changelist>
         <jenkins.version>2.321</jenkins.version>
         <java.level>8</java.level>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
@@ -40,7 +39,7 @@
     <artifactId>confluence-publisher</artifactId>
     <name>Confluence Publisher</name>
     <description>Publish build artifacts to an Atlassian Confluence wiki</description>
-    <version>${revision}${changelist}</version>
+    <version>${changelist}</version>
     <packaging>hpi</packaging>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
 
