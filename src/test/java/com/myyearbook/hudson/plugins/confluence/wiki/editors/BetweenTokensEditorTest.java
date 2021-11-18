@@ -1,23 +1,27 @@
 package com.myyearbook.hudson.plugins.confluence.wiki.editors;
 
 import hudson.model.TaskListener;
-import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.jvnet.hudson.test.Bug;
+import org.jvnet.hudson.test.Issue;
 import org.mockito.Mock;
-
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.myyearbook.hudson.plugins.confluence.wiki.editors.MarkupEditor.TokenNotFoundException;
 import com.myyearbook.hudson.plugins.confluence.wiki.generators.MarkupGenerator;
+import org.mockito.MockitoAnnotations;
 
-public class BetweenTokensEditorTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+public class BetweenTokensEditorTest {
 
     private static final String START_TOKEN = "%start%";
     private static final String END_TOKEN = "%end%";
+
+    private AutoCloseable closeable;
 
     @Mock
     TaskListener buildListener;
@@ -25,16 +29,13 @@ public class BetweenTokensEditorTest extends TestCase {
     MarkupGenerator markupGenerator;
 
     @Before
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        initMocks(this);
+    public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
     }
 
     @After
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -42,8 +43,8 @@ public class BetweenTokensEditorTest extends TestCase {
      *
      * @throws TokenNotFoundException
      */
-    @Bug(14205)
-    @Test(expected = TokenNotFoundException.class)
+    @Issue("JENKINS-14205")
+    @Test
     public void testPerformEdits_startMarkerNotFound() {
         String testContent = "The start marker is nowhere to be found.%end%";
         String toInsert = "New Content!";
@@ -51,12 +52,8 @@ public class BetweenTokensEditorTest extends TestCase {
 
         BetweenTokensEditor obj = new BetweenTokensEditor(markupGenerator, START_TOKEN, END_TOKEN);
 
-        try {
-            obj.performEdits(buildListener, testContent, toInsert, false);
-            fail("Expected TokenNotFoundException");
-        } catch (TokenNotFoundException exc) {
-            assertTrue(exc.getMessage().startsWith(expectedMessage));
-        }
+        TokenNotFoundException exc = assertThrows(TokenNotFoundException.class, () -> obj.performEdits(buildListener, testContent, toInsert, false));
+        assertTrue(exc.getMessage().startsWith(expectedMessage));
     }
 
     /**
@@ -64,7 +61,7 @@ public class BetweenTokensEditorTest extends TestCase {
      *
      * @throws TokenNotFoundException
      */
-    @Test(expected = TokenNotFoundException.class)
+    @Test
     public void testPerformEdits_endMarkerNotFound() {
         String testContent = "%start%The end marker is nowhere to be found.";
         String toInsert = "New Content!";
@@ -72,12 +69,8 @@ public class BetweenTokensEditorTest extends TestCase {
 
         BetweenTokensEditor obj = new BetweenTokensEditor(markupGenerator, START_TOKEN, END_TOKEN);
 
-        try {
-            obj.performEdits(buildListener, testContent, toInsert, false);
-            fail("Expected TokenNotFoundException");
-        } catch (TokenNotFoundException exc) {
-            assertTrue(exc.getMessage().startsWith(expectedMessage));
-        }
+        TokenNotFoundException exc = assertThrows(TokenNotFoundException.class, () -> obj.performEdits(buildListener, testContent, toInsert, false));
+        assertTrue(exc.getMessage().startsWith(expectedMessage));
     }
 
     /**
@@ -86,7 +79,8 @@ public class BetweenTokensEditorTest extends TestCase {
      *
      * @throws TokenNotFoundException
      */
-    @Bug(13896)
+    @Issue("JENKINS-13896")
+    @Test
     public void testPerformEdits_multipleMarkers() throws TokenNotFoundException {
         String testContent = "%start1%First Section.%end%\n%start%Second Section.%end%";
         String toInsert = "First replacement";
@@ -106,6 +100,7 @@ public class BetweenTokensEditorTest extends TestCase {
      *
      * @throws TokenNotFoundException
      */
+    @Test
     public void testPerformEdits_oldFormat() throws TokenNotFoundException {
         String testContent = "Header\n%start%Current Content%end%\nFooter";
         String toInsert = "Replacement content";
