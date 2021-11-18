@@ -13,7 +13,12 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
-import com.atlassian.confluence.api.model.content.*;
+import com.atlassian.confluence.api.model.content.Content;
+import com.atlassian.confluence.api.model.content.ContentBody;
+import com.atlassian.confluence.api.model.content.ContentRepresentation;
+import com.atlassian.confluence.api.model.content.ContentStatus;
+import com.atlassian.confluence.api.model.content.ContentType;
+import com.atlassian.confluence.api.model.content.Space;
 import com.atlassian.confluence.api.model.pagination.PageResponse;
 import com.atlassian.confluence.api.service.exceptions.ServiceException;
 import com.atlassian.fugue.Option;
@@ -23,7 +28,14 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Descriptor;
+import hudson.model.EnvironmentContributingAction;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.Saveable;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -40,21 +52,26 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class ConfluencePublisher extends Notifier implements Saveable, SimpleBuildStep {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    private @Nonnull final String siteName;
-    private @Nonnull final String spaceName;
-    private @Nonnull final String pageName;
+    private @NonNull final String siteName;
+    private @NonNull final String spaceName;
+    private @NonNull final String pageName;
     private boolean attachArchivedArtifacts;
     private boolean buildIfUnstable;
     private String fileSet;
@@ -81,7 +98,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @DataBoundConstructor
-    public ConfluencePublisher(@Nonnull String siteName, final @Nonnull String spaceName, final @Nonnull String pageName) {
+    public ConfluencePublisher(@NonNull String siteName, final @NonNull String spaceName, final @NonNull String pageName) {
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
 
@@ -153,7 +170,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the pageName
      */
-    public @Nonnull String getPageName() {
+    public @NonNull String getPageName() {
         return pageName;
     }
 
@@ -199,14 +216,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the siteName
      */
-    public @Nonnull String getSiteName() {
+    public @NonNull String getSiteName() {
         return siteName;
     }
 
     /**
      * @return the spaceName
      */
-    public @Nonnull String getSpaceName() {
+    public @NonNull String getSpaceName() {
         return spaceName;
     }
 
@@ -341,8 +358,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> build, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
-                        @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    public void perform(@NonNull Run<?, ?> build, @NonNull FilePath filePath, @NonNull Launcher launcher,
+                        @NonNull TaskListener listener) throws InterruptedException, IOException {
         boolean result = true;
         ConfluenceSite site = getSite();
 
@@ -374,9 +391,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         try {
             spaceName = build.getEnvironment(listener).expand(spaceName);
             pageName = build.getEnvironment(listener).expand(pageName);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
@@ -412,23 +427,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         List<Content> remoteAttachments = null;
         try {
             remoteAttachments = this.performAttachments(build, filePath, listener, confluence, pageContent);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
         if (!editors.isEmpty()) {
             // Perform wiki replacements
-            try {
                 result &= this.performWikiReplacements(build, filePath, listener, confluence,
                         pageContent, remoteAttachments);
-            } catch (IOException e) {
-                e.printStackTrace(listener.getLogger());
-            } catch (InterruptedException e) {
-                e.printStackTrace(listener.getLogger());
-            }
-
         }
 
         // Add the page labels
@@ -477,14 +483,13 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     private boolean performWikiReplacements(Run<?, ?> build, FilePath filePath, TaskListener listener,
                                             ConfluenceSession confluence,
-                                            Content pageContent, List<Content> remoteAttachments)
-            throws IOException, InterruptedException {
+                                            Content pageContent, List<Content> remoteAttachments) {
 
         boolean isUpdated = false;
         //Ugly Hack, though required here. DO NOT REMOVE, otherwise  Content.ContentBuilder.build() will fail.
         Consumer<Map<ContentType, PageResponse<Content>>> SANITIZE_NESTED_CONTENT_MAP = (m) ->
-                m.entrySet().stream().filter(e -> e.getValue() == null).map(e -> e.getKey())
-                        .collect(Collectors.toList()).stream().forEach(k -> m.remove(k));
+                m.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey)
+                        .collect(Collectors.toList()).forEach(m::remove);
 
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getChildren());
         SANITIZE_NESTED_CONTENT_MAP.accept(pageContent.getDescendants());
@@ -515,7 +520,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         Optional<Content> remoteResults =
                 confluence.getContent(pageContent.getSpace().getKey(), pageContent.getTitle(), true);
         if (remoteResults.isPresent()) {
-            isUpdated = (remoteResults.get().getVersion().getNumber() == results.getVersion().getNumber()) ? true : false;
+            isUpdated = remoteResults.get().getVersion().getNumber() == results.getVersion().getNumber();
         }
 
         return isUpdated;
@@ -531,20 +536,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         Optional<Content> previousComment = Optional.empty();
         List<Content> cl = new ArrayList<>();
 
-        Optional.ofNullable(pageContent.getChildren()).ifPresent(cn ->
-                Optional.ofNullable(cn.get(ContentType.COMMENT)).ifPresent(cm ->
-                        Optional.ofNullable(cm.getResults()).ifPresent(lc ->
-                                cl.addAll(lc)
-                        )
-                )
-        );
+        Optional.ofNullable(pageContent.getChildren())
+                .flatMap(cn -> Optional.ofNullable(cn.get(ContentType.COMMENT)).flatMap(cm -> Optional.ofNullable(cm.getResults())))
+                .ifPresent(cl::addAll);
 
         if (!cl.isEmpty()) {
             previousComment = cl.stream()
-                    .filter(c -> c.getBody().get(ContentRepresentation.STORAGE)
-                            .getValue().contains(editComment.split(":")[0]))
-                    .sorted(Comparator.comparing(c -> c.getVersion().getNumber())
-                    ).findFirst();
+                    .filter(c -> c.getBody().get(ContentRepresentation.STORAGE).getValue().contains(editComment.split(":")[0]))
+                    .min(Comparator.comparing(c -> c.getVersion().getNumber()));
         }
 
         if (previousComment.isPresent()) {
@@ -693,11 +692,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
 
         public List<Descriptor<MarkupEditor>> getEditors() {
-            final List<Descriptor<MarkupEditor>> editors = new ArrayList<>();
 
-            for (Descriptor<MarkupEditor> editor : MarkupEditor.all()) {
-                editors.add(editor);
-            }
+            final List<Descriptor<MarkupEditor>> editors = new ArrayList<>(MarkupEditor.all());
 
             return editors;
         }
@@ -826,8 +822,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
 
         @Override
-        public boolean isApplicable(
-                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
+        public boolean isApplicable(Class<? extends AbstractProject> p) {
             return sites != null && sites.size() > 0;
         }
 
