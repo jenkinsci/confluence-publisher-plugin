@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright 2012 MeetMe, Inc.
     Copyright 2011-2012 Insider Guides, Inc.
@@ -17,40 +18,31 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.48</version>
+        <version>4.31</version>
         <relativePath />
     </parent>
 
     <properties>
-        <jenkins.version>2.185</jenkins.version>
+        <revision>2.0.7</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <jenkins.version>2.321</jenkins.version>
         <java.level>8</java.level>
+        <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
         <no-test-jar>false</no-test-jar>
         <!-- Use the same configuration than before. -->
-        <findbugs.failOnError>false</findbugs.failOnError>
+        <spotbugs.failOnError>false</spotbugs.failOnError>
     </properties>
 
 
     <artifactId>confluence-publisher</artifactId>
     <name>Confluence Publisher</name>
     <description>Publish build artifacts to an Atlassian Confluence wiki</description>
-    <version>2.0.7-SNAPSHOT</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
-    <url>https://github.com/jenkinsci/confluence-publisher-plugin/</url>
+    <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
 
     <organization>
         <name>MeetMe, Inc.</name>
@@ -88,21 +80,45 @@
         </developer>
     </developers>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.319.x</artifactId>
+                <version>1013.vf8058992a042</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-cps</artifactId>
-            <version>2.73</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>structs</artifactId>
-            <version>1.20</version>
         </dependency>
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
             <artifactId>confluence-rest-client</artifactId>
-            <version>6.15.7</version>
+            <version>7.14.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -111,22 +127,16 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.8.0</version>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>18.0</version>
         </dependency>
     </dependencies>
 
     <scm>
-        <connection>scm:git:git://github.com/jenkinsci/confluence-publisher-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:jenkinsci/confluence-publisher-plugin.git</developerConnection>
-        <url>http://github.com/jenkinsci/confluence-publisher-plugin</url>
-        <tag>HEAD</tag>
+        <connection>scm:git:https://github.com/${gitHubRepo}</connection>
+        <developerConnection>scm:git:https://github.com/${gitHubRepo}</developerConnection>
+        <url>https://github.com/${gitHubRepo}</url>
+        <tag>${scmTag}</tag>
     </scm>
 
     <repositories>
