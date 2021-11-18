@@ -40,7 +40,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
@@ -52,9 +52,9 @@ import java.util.stream.Collectors;
 public final class ConfluencePublisher extends Notifier implements Saveable, SimpleBuildStep {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
 
-    private @Nonnull final String siteName;
-    private @Nonnull final String spaceName;
-    private @Nonnull final String pageName;
+    private @NonNull final String siteName;
+    private @NonNull final String spaceName;
+    private @NonNull final String pageName;
     private boolean attachArchivedArtifacts;
     private boolean buildIfUnstable;
     private String fileSet;
@@ -81,7 +81,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @DataBoundConstructor
-    public ConfluencePublisher(@Nonnull String siteName, final @Nonnull String spaceName, final @Nonnull String pageName) {
+    public ConfluencePublisher(@NonNull String siteName, final @NonNull String spaceName, final @NonNull String pageName) {
         if (siteName == null) {
             List<ConfluenceSite> sites = getDescriptor().getSites();
 
@@ -153,7 +153,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the pageName
      */
-    public @Nonnull String getPageName() {
+    public @NonNull String getPageName() {
         return pageName;
     }
 
@@ -199,14 +199,14 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     /**
      * @return the siteName
      */
-    public @Nonnull String getSiteName() {
+    public @NonNull String getSiteName() {
         return siteName;
     }
 
     /**
      * @return the spaceName
      */
-    public @Nonnull String getSpaceName() {
+    public @NonNull String getSpaceName() {
         return spaceName;
     }
 
@@ -341,8 +341,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> build, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
-                        @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    public void perform(@NonNull Run<?, ?> build, @NonNull FilePath filePath, @NonNull Launcher launcher,
+                        @NonNull TaskListener listener) throws InterruptedException, IOException {
         boolean result = true;
         ConfluenceSite site = getSite();
 
