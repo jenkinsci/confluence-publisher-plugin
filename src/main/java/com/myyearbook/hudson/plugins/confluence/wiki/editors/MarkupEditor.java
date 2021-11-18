@@ -121,7 +121,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<MarkupEditor> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        return Jenkins.get().getDescriptor(getClass());
     }
 
     /**
@@ -130,8 +130,7 @@ public abstract class MarkupEditor implements Describable<MarkupEditor>, Extensi
      * @return List of descriptors
      */
     public static DescriptorExtensionList<MarkupEditor, Descriptor<MarkupEditor>> all() {
-        return Jenkins.getInstance().<MarkupEditor, Descriptor<MarkupEditor>> getDescriptorList(
-                MarkupEditor.class);
+        return Jenkins.get().getDescriptorList(MarkupEditor.class);
     }
 
     /**

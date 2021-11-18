@@ -43,7 +43,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
     @SuppressWarnings("unchecked")
     @Override
     public Descriptor<MarkupGenerator> getDescriptor() {
-        return Jenkins.getInstance().getDescriptor(getClass());
+        return Jenkins.get().getDescriptor(getClass());
     }
 
     /**
@@ -52,9 +52,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
      * @return
      */
     public static DescriptorExtensionList<MarkupGenerator, Descriptor<MarkupGenerator>> all() {
-        return Jenkins.getInstance()
-                .<MarkupGenerator, Descriptor<MarkupGenerator>> getDescriptorList(
-                        MarkupGenerator.class);
+        return Jenkins.get().getDescriptorList(MarkupGenerator.class);
     }
 
     /**
