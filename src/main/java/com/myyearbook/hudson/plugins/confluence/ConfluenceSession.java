@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -191,7 +192,7 @@ public class ConfluenceSession {
                     bos.flush();
                     AttachmentUpload attachment = new AttachmentUpload(uploadFile, file.getName(), contentType, comment, false);
                     return attachmentService
-                            .addAttachments(ContentId.of(pageId), Arrays.asList(attachment))
+                            .addAttachments(ContentId.of(pageId), Collections.singletonList(attachment))
                             .claim();
                 }
             } catch (IOException ie) {
@@ -262,7 +263,7 @@ public class ConfluenceSession {
     @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "false positive")
     public PageResponse<Label> getLabels(long id) {
         return (PageResponse<Label>) remoteContentLabelService
-                .getLabels(ContentId.of(id), Arrays.asList(labelPrefix), null).claim();
+                .getLabels(ContentId.of(id), Collections.singletonList(labelPrefix), null).claim();
     }
 
     public Person getCurrentUser() {
