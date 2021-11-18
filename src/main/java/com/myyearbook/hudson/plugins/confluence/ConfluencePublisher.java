@@ -374,9 +374,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         try {
             spaceName = build.getEnvironment(listener).expand(spaceName);
             pageName = build.getEnvironment(listener).expand(pageName);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
@@ -412,9 +410,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         List<Content> remoteAttachments = null;
         try {
             remoteAttachments = this.performAttachments(build, filePath, listener, confluence, pageContent);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 

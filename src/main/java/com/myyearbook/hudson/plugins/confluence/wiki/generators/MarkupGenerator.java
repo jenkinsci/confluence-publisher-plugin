@@ -79,9 +79,7 @@ public abstract class MarkupGenerator implements Describable<MarkupGenerator>, E
         try {
 		result = expandAttachmentsLink(listener, generated,remoteAttachments);
 		result = build.getEnvironment(listener).expand(result);
-        } catch (IOException e) {
-            e.printStackTrace(listener.getLogger());
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace(listener.getLogger());
         }
 
