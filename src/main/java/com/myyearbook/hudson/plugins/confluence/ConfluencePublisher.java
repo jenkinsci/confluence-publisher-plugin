@@ -519,12 +519,9 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         Optional<Content> previousComment = Optional.empty();
         List<Content> cl = new ArrayList<>();
 
-        Optional.ofNullable(pageContent.getChildren()).ifPresent(cn ->
-                Optional.ofNullable(cn.get(ContentType.COMMENT)).ifPresent(cm ->
-                        Optional.ofNullable(cm.getResults()).ifPresent(cl::addAll
-                        )
-                )
-        );
+        Optional.ofNullable(pageContent.getChildren())
+                .flatMap(cn -> Optional.ofNullable(cn.get(ContentType.COMMENT)).flatMap(cm -> Optional.ofNullable(cm.getResults())))
+                .ifPresent(cl::addAll);
 
         if (!cl.isEmpty()) {
             previousComment = cl.stream()
