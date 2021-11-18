@@ -818,8 +818,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         }
 
         @Override
-        public boolean isApplicable(
-                @SuppressWarnings("rawtypes") Class<? extends AbstractProject> p) {
+        public boolean isApplicable(Class<? extends AbstractProject> p) {
             return sites != null && sites.size() > 0;
         }
 
