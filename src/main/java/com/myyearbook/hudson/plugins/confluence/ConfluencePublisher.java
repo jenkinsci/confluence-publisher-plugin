@@ -13,7 +13,12 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
-import com.atlassian.confluence.api.model.content.*;
+import com.atlassian.confluence.api.model.content.Content;
+import com.atlassian.confluence.api.model.content.ContentBody;
+import com.atlassian.confluence.api.model.content.ContentRepresentation;
+import com.atlassian.confluence.api.model.content.ContentStatus;
+import com.atlassian.confluence.api.model.content.ContentType;
+import com.atlassian.confluence.api.model.content.Space;
 import com.atlassian.confluence.api.model.pagination.PageResponse;
 import com.atlassian.confluence.api.service.exceptions.ServiceException;
 import com.atlassian.fugue.Option;
@@ -23,7 +28,14 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Descriptor;
+import hudson.model.EnvironmentContributingAction;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.Saveable;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -45,7 +57,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 

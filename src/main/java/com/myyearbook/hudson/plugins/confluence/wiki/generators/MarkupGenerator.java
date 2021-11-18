@@ -13,7 +13,6 @@
  */
 package com.myyearbook.hudson.plugins.confluence.wiki.generators;
 
-import com.atlassian.confluence.api.model.content.AttachmentUpload;
 import com.atlassian.confluence.api.model.content.Content;
 import com.atlassian.confluence.api.model.link.LinkType;
 import hudson.DescriptorExtensionList;
