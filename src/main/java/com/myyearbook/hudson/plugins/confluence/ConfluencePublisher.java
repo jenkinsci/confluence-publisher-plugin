@@ -420,15 +420,8 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
         if (!editors.isEmpty()) {
             // Perform wiki replacements
-            try {
                 result &= this.performWikiReplacements(build, filePath, listener, confluence,
                         pageContent, remoteAttachments);
-            } catch (IOException e) {
-                e.printStackTrace(listener.getLogger());
-            } catch (InterruptedException e) {
-                e.printStackTrace(listener.getLogger());
-            }
-
         }
 
         // Add the page labels
@@ -477,8 +470,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
 
     private boolean performWikiReplacements(Run<?, ?> build, FilePath filePath, TaskListener listener,
                                             ConfluenceSession confluence,
-                                            Content pageContent, List<Content> remoteAttachments)
-            throws IOException, InterruptedException {
+                                            Content pageContent, List<Content> remoteAttachments) {
 
         boolean isUpdated = false;
         //Ugly Hack, though required here. DO NOT REMOVE, otherwise  Content.ContentBuilder.build() will fail.

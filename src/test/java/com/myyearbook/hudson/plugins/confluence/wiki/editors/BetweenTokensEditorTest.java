@@ -44,7 +44,7 @@ public class BetweenTokensEditorTest extends TestCase {
      */
     @Bug(14205)
     @Test(expected = TokenNotFoundException.class)
-    public void testPerformEdits_startMarkerNotFound() throws TokenNotFoundException {
+    public void testPerformEdits_startMarkerNotFound() {
         String testContent = "The start marker is nowhere to be found.%end%";
         String toInsert = "New Content!";
         String expectedMessage = "Start-marker token could not be found in the page content:";
@@ -65,7 +65,7 @@ public class BetweenTokensEditorTest extends TestCase {
      * @throws TokenNotFoundException
      */
     @Test(expected = TokenNotFoundException.class)
-    public void testPerformEdits_endMarkerNotFound() throws TokenNotFoundException {
+    public void testPerformEdits_endMarkerNotFound() {
         String testContent = "%start%The end marker is nowhere to be found.";
         String toInsert = "New Content!";
         String expectedMessage = "End-marker token could not be found after the start-marker token:";
