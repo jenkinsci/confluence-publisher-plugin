@@ -507,7 +507,7 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
         Optional<Content> remoteResults =
                 confluence.getContent(pageContent.getSpace().getKey(), pageContent.getTitle(), true);
         if (remoteResults.isPresent()) {
-            isUpdated = (remoteResults.get().getVersion().getNumber() == results.getVersion().getNumber()) ? true : false;
+            isUpdated = remoteResults.get().getVersion().getNumber() == results.getVersion().getNumber();
         }
 
         return isUpdated;
