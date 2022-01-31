@@ -84,7 +84,7 @@
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-2.319.x</artifactId>
-                <version>1055.v9637a690f734</version>
+                <version>1135.va_4eeca_ea_21c1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
