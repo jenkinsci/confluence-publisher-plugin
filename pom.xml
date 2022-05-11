@@ -21,14 +21,13 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.31</version>
+        <version>4.40</version>
         <relativePath />
     </parent>
 
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
         <jenkins.version>2.321</jenkins.version>
-        <java.level>8</java.level>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
         <no-test-jar>false</no-test-jar>
         <!-- Use the same configuration than before. -->
@@ -88,6 +87,11 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <dependency>
+                <groupId>com.atlassian.plugins</groupId>
+                <artifactId>atlassian-plugins-core</artifactId>
+                <version>5.3.11</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -120,9 +124,9 @@
             </exclusions>
         </dependency>
         <dependency>
-              <groupId>io.jenkins.plugins</groupId>
-              <artifactId>jaxb</artifactId>
-              <version>2.3.6-1</version>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>jaxb</artifactId>
+            <version>2.3.6-1</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
