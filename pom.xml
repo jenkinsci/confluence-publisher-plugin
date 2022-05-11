@@ -88,10 +88,10 @@
                 <type>pom</type>
             </dependency>
             <dependency>
-+               <groupId>com.atlassian.plugins</groupId>
-+               <artifactId>atlassian-plugins-core</artifactId>
-+               <version>5.3.11</version>
-+           </dependency>
+                <groupId>com.atlassian.plugins</groupId>
+                <artifactId>atlassian-plugins-core</artifactId>
+                <version>5.3.11</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
