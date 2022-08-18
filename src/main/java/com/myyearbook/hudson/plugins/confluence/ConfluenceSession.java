@@ -44,6 +44,9 @@ import com.google.common.collect.Collections2;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.util.DaemonThreadFactory;
+import hudson.util.NamingThreadFactory;
+import jenkins.util.SystemProperties;
 import jenkins.util.VirtualFile;
 import org.apache.commons.io.IOUtils;
 
@@ -56,7 +59,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -69,8 +75,14 @@ import java.util.stream.Collectors;
  */
 public class ConfluenceSession {
 
+    private static final int CORE_POOL_SIZE = SystemProperties.getInteger(
+        ConfluenceSession.class.getName() + ".corePoolSize", 1);
+    
+    private static final int MAX_POOL_SIZE = SystemProperties.getInteger(
+        ConfluenceSession.class.getName() + ".maxPoolSize", 5);
+
     private final AuthenticatedWebResourceProvider authenticatedWebResourceProvider;
-    private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(3));
+    private static final ListeningExecutorService executor = MoreExecutors.listeningDecorator(executorService());
     private final RemoteAttachmentServiceImpl attachmentService;
     private final RemoteContentLabelService remoteContentLabelService;
     private final RemoteContentPropertyService contentPropertyService;
@@ -128,6 +140,18 @@ public class ConfluenceSession {
         this.cqlSearchService = new RemoteCQLSearchServiceImpl(authenticatedWebResourceProvider, executor);
         this.remotePersonService = new RemotePersonServiceImpl(authenticatedWebResourceProvider, executor);
         this.spaceService = new RemoteSpaceServiceImpl(authenticatedWebResourceProvider, executor);
+    }
+
+    private static final ExecutorService executorService() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAX_POOL_SIZE,
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            new NamingThreadFactory(new DaemonThreadFactory(), ConfluenceSession.class.getCanonicalName())
+        );
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
     }
 
     /**
