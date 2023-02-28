@@ -13,8 +13,10 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
+import com.atlassian.confluence.api.model.people.Person;
 import com.atlassian.confluence.rest.client.RestClientFactory;
 import com.atlassian.confluence.rest.client.authentication.AuthenticatedWebResourceProvider;
+import com.myyearbook.hudson.plugins.confluence.api.BasicOrBearerTokenAuthWebResourceProvider;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -87,14 +89,15 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         final String restUrl = url.toExternalForm();
         LOGGER.log(Level.FINEST, "[confluence] Using Confluence base url: " + restUrl);
 
-        AuthenticatedWebResourceProvider authenticatedWebResourceProvider = new AuthenticatedWebResourceProvider(
+        AuthenticatedWebResourceProvider authenticatedWebResourceProvider =
+            new BasicOrBearerTokenAuthWebResourceProvider(
                 RestClientFactory.newClient(),
                 restUrl,
                 "");
-        if (username != null && password != null) {
+        if (password != null) {
+            //when username is null using bearer token authentication
             authenticatedWebResourceProvider.setAuthContext(username, password.getPlainText().toCharArray());
         }
-
 
         return new ConfluenceSession(authenticatedWebResourceProvider);
     }
@@ -140,14 +143,21 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             username = hudson.Util.fixEmpty(username);
             password = hudson.Util.fixEmpty(password);
 
-            if (username == null || password == null) {
-                return FormValidation.warning("Enter username and password");
+            if (username != null && password == null) {
+                return FormValidation.warning("Enter username and password or access token only");
             }
 
             final ConfluenceSite site = new ConfluenceSite(new URL(url), username, password);
 
             try {
-                site.createSession().getCurrentUser();
+                Person currentUser = site.createSession().getCurrentUser();
+                if (password != null && password.length() > 0 && "anonymous".equalsIgnoreCase(currentUser.getDisplayName())) {
+                    Exception e = new Exception("Current user is anonymous.");
+
+                    LOGGER.log(Level.WARNING, "Failed to login to Confluence at " + url, e);
+                    return FormValidation.error(e, "Failed to login");
+                }
+
                 return FormValidation.ok("SUCCESS");
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to login to Confluence at " + url, e);

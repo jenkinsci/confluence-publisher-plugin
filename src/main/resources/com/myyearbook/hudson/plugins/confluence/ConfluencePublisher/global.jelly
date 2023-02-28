@@ -16,7 +16,7 @@
 						<f:textbox />
 					</f:entry>
 
-					<f:entry title="Password" field="password">
+					<f:entry title="Password / Access Token" field="password">
 						<f:password />
 					</f:entry>
 

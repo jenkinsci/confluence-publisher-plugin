@@ -27,6 +27,10 @@ configuration. If authentication credentials are not supplied, the
 plugin will act as an anonymous user – as such your Confluence
 configuration must support anonymous attachments for that to work.
 
+The plugin supports both basic authentication (by providing username
+and password) and bearer authentication (by providing an access token
+as the password leaving the username empty).
+
 ![](docs/images/Screen_shot_2011-02-28_at_8.17.13_PM.png){width="800"}
 
 ### Job Configuration
