@@ -38,6 +38,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
+import javax.annotation.CheckForNull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -59,32 +60,26 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
     /**
      * The base URL of the Confluence site
      */
-    public final URL url;
+    public URL url;
 
     private String credentialsId;
     private transient String username;
     private transient Secret password;
 
     /**
-     * Stapler constructor
      *
-     * @param url
-     * @param credentialsId
+     *
+     * @deprecated use {@link #ConfluenceSite()} instead.
      */
+    @Deprecated
+    public ConfluenceSite(URL url, final String username, final String password) {
+        this.url = toExternalUrl(url);
+        this.username = hudson.Util.fixEmptyAndTrim(username);
+        this.password = Secret.fromString(password);
+    }
+
     @DataBoundConstructor
-    public ConfluenceSite(URL url, final String credentialsId) {
-        LOGGER.log(Level.FINER, "ctor args: " + url + ", " + credentialsId);
-
-        if (!url.toExternalForm().endsWith("/")) {
-            try {
-                url = new URL(url.toExternalForm() + "/");
-            } catch (MalformedURLException e) {
-                throw new AssertionError(e); // impossible
-            }
-        }
-
-        this.url = url;
-        this.credentialsId = hudson.Util.fixEmptyAndTrim(credentialsId);
+    public ConfluenceSite() {
     }
 
     /**
@@ -109,8 +104,8 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                             URIRequirementBuilder.create().build()),
                     CredentialsMatchers.withId(credentialsId));
             if (credentials != null) {
-                if (credentials instanceof UsernamePasswordCredentials) {
-                    UsernamePasswordCredentials userPwCreds = (UsernamePasswordCredentials)credentials;
+                if (credentials instanceof StandardUsernamePasswordCredentials) {
+                    StandardUsernamePasswordCredentials userPwCreds = (StandardUsernamePasswordCredentials)credentials;
 
                     authenticatedWebResourceProvider.setAuthContext(
                             userPwCreds.getUsername(),
@@ -141,38 +136,34 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         return credentialsId;
     }
 
+    public URL getUrl() {
+        return url;
+    }
+
     @DataBoundSetter
     public void setCredentialsId(String credentialsId) {
         this.credentialsId = Util.fixEmptyAndTrim(credentialsId);
     }
 
-    @Deprecated
-    public String getUsername(){
-        return username;
-    }
-
     @DataBoundSetter
-    public void setUsername(String username){
-        this.username = Util.fixEmptyAndTrim(username);
-    }
-
-    @Deprecated
-    public Secret getPassword(){
-        return password;
-    }
-
-    @DataBoundSetter
-    public void setPassword(Secret password) {
-        this.password = password;
-    }
-
-    public void setPassword(String password) {
-        this.password = Secret.fromString(password);
+    public void setUrl(@CheckForNull URL url) {
+        this.url = url == null ? null : toExternalUrl(url);
     }
 
     @Override
     public String toString() {
         return "Confluence{" + getName() + "}";
+    }
+
+    private static URL toExternalUrl(URL url) {
+        if (url.toExternalForm().endsWith("/"))
+            return url;
+
+        try {
+            return new URL(url.toExternalForm() + "/");
+        } catch (MalformedURLException e) {
+            throw new AssertionError(e); // impossible
+        }
     }
 
     @Extension
@@ -227,7 +218,9 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             if (jenkins == null || !jenkins.hasPermission(Jenkins.ADMINISTER))
                 return FormValidation.ok();
 
-            final ConfluenceSite site = new ConfluenceSite(new URL(url), credentialsId);
+            final ConfluenceSite site = new ConfluenceSite();
+            site.setUrl(new URL(url));
+            site.setCredentialsId(credentialsId);
 
             try {
                 site.createSession().getCurrentUser();
