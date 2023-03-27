@@ -23,7 +23,6 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import com.myyearbook.hudson.plugins.confluence.api.BearerTokenAuthWebResourceProvider;
-import com.myyearbook.hudson.plugins.confluence.credentials.ConfluenceApiToken;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.*;
@@ -34,6 +33,7 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -126,8 +126,8 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             return new ConfluenceSession(authenticatedWebResourceProvider);
         }
 
-        if (credentials instanceof ConfluenceApiToken) {
-            ConfluenceApiToken apiTokenCreds = (ConfluenceApiToken) credentials;
+        if (credentials instanceof StringCredentials) {
+            StringCredentials stringCreds = (StringCredentials) credentials;
 
             BearerTokenAuthWebResourceProvider authenticatedWebResourceProvider =
                 new BearerTokenAuthWebResourceProvider(
@@ -135,7 +135,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                     restUrl,
                     "");
             authenticatedWebResourceProvider.setAuthContext(
-                apiTokenCreds.getApiToken().getPlainText().toCharArray());
+                stringCreds.getSecret().getPlainText().toCharArray());
 
             return new ConfluenceSession(authenticatedWebResourceProvider);
         }
@@ -221,7 +221,7 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
                             Collections.emptyList(),
                             CredentialsMatchers.anyOf(
                                 CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
-                                CredentialsMatchers.instanceOf(ConfluenceApiToken.class)))
+                                CredentialsMatchers.instanceOf(StringCredentials.class)))
                     .includeCurrentValue(credentialsId);
         }
 
