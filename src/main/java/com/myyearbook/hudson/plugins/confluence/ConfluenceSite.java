@@ -13,25 +13,53 @@
  */
 package com.myyearbook.hudson.plugins.confluence;
 
+import com.atlassian.confluence.api.model.people.Person;
 import com.atlassian.confluence.rest.client.RestClientFactory;
 import com.atlassian.confluence.rest.client.authentication.AuthenticatedWebResourceProvider;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsStore;
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardCredentials;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import com.myyearbook.hudson.plugins.confluence.api.BearerTokenAuthWebResourceProvider;
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
+import hudson.model.Item;
+import hudson.model.Queue;
+import hudson.model.queue.Tasks;
+import hudson.security.ACL;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang3.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
+import javax.annotation.CheckForNull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 
 /**
  * Represents an external Confluence installation and configuration needed to access it.
@@ -42,40 +70,26 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
     /**
      * The base URL of the Confluence site
      */
-    public final URL url;
+    public URL url;
+
+    private String credentialsId;
+    private transient String username;
+    private transient Secret password;
 
     /**
-     * The username to login as
-     */
-    public final String username;
-
-    /**
-     * The password for that user
-     */
-    public final Secret password;
-
-    /**
-     * Stapler constructor
      *
-     * @param url
-     * @param username
-     * @param password
+     *
+     * @deprecated use {@link #ConfluenceSite()} instead.
      */
-    @DataBoundConstructor
+    @Deprecated
     public ConfluenceSite(URL url, final String username, final String password) {
-        LOGGER.log(Level.FINER, "ctor args: " + url + ", " + username + ", " + password);
-
-        if (!url.toExternalForm().endsWith("/")) {
-            try {
-                url = new URL(url.toExternalForm() + "/");
-            } catch (MalformedURLException e) {
-                throw new AssertionError(e); // impossible
-            }
-        }
-
-        this.url = url;
+        this.url = toExternalUrl(url);
         this.username = hudson.Util.fixEmptyAndTrim(username);
         this.password = Secret.fromString(password);
+    }
+
+    @DataBoundConstructor
+    public ConfluenceSite() {
     }
 
     /**
@@ -87,16 +101,54 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         final String restUrl = url.toExternalForm();
         LOGGER.log(Level.FINEST, "[confluence] Using Confluence base url: " + restUrl);
 
-        AuthenticatedWebResourceProvider authenticatedWebResourceProvider = new AuthenticatedWebResourceProvider(
-                RestClientFactory.newClient(),
-                restUrl,
-                "");
-        if (username != null && password != null) {
-            authenticatedWebResourceProvider.setAuthContext(username, password.getPlainText().toCharArray());
+        if (credentialsId == null) {
+            return new ConfluenceSession(
+                    new AuthenticatedWebResourceProvider(
+                        RestClientFactory.newClient(),
+                        restUrl,
+                        ""));
         }
 
+        StandardCredentials credentials = CredentialsMatchers.firstOrNull(
+                lookupCredentials(
+                        StandardCredentials.class,
+                        Jenkins.get(),
+                        ACL.SYSTEM,
+                        URIRequirementBuilder.create().build()),
+                CredentialsMatchers.withId(credentialsId));
+        if (credentials == null)
+            throw new IllegalStateException("No credentials found for credentialsId: " + credentialsId);
 
-        return new ConfluenceSession(authenticatedWebResourceProvider);
+        if (credentials instanceof StandardUsernamePasswordCredentials) {
+            StandardUsernamePasswordCredentials userPwCreds = (StandardUsernamePasswordCredentials)credentials;
+
+            AuthenticatedWebResourceProvider authenticatedWebResourceProvider =
+                new AuthenticatedWebResourceProvider(
+                    RestClientFactory.newClient(),
+                    restUrl,
+                    "");
+            authenticatedWebResourceProvider.setAuthContext(
+                userPwCreds.getUsername(),
+                userPwCreds.getPassword().getPlainText().toCharArray());
+
+            return new ConfluenceSession(authenticatedWebResourceProvider);
+        }
+
+        if (credentials instanceof StringCredentials) {
+            StringCredentials stringCreds = (StringCredentials) credentials;
+
+            BearerTokenAuthWebResourceProvider authenticatedWebResourceProvider =
+                new BearerTokenAuthWebResourceProvider(
+                    RestClientFactory.newClient(),
+                    restUrl,
+                    "");
+            authenticatedWebResourceProvider.setAuthContext(
+                stringCreds.getSecret().getPlainText().toCharArray());
+
+            return new ConfluenceSession(authenticatedWebResourceProvider);
+        }
+
+        throw new IllegalStateException("Can not use credentials of type " + credentials.getClass().getName());
     }
 
     @Override
@@ -108,9 +160,41 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
         return this.url.getHost();
     }
 
+    public String getCredentialsId() throws IOException {
+        if(StringUtils.isBlank(credentialsId) && StringUtils.isNotBlank(username) && password != null) {
+            migrateCredentials();
+        }
+        return credentialsId;
+    }
+
+    public URL getUrl() {
+        return url;
+    }
+
+    @DataBoundSetter
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = Util.fixEmptyAndTrim(credentialsId);
+    }
+
+    @DataBoundSetter
+    public void setUrl(@CheckForNull URL url) {
+        this.url = url == null ? null : toExternalUrl(url);
+    }
+
     @Override
     public String toString() {
         return "Confluence{" + getName() + "}";
+    }
+
+    private static URL toExternalUrl(URL url) {
+        if (url.toExternalForm().endsWith("/"))
+            return url;
+
+        try {
+            return new URL(url.toExternalForm() + "/");
+        } catch (MalformedURLException e) {
+            throw new AssertionError(e); // impossible
+        }
     }
 
     @Extension
@@ -119,12 +203,42 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             super(ConfluenceSite.class);
         }
 
+        @SuppressWarnings("unused") // Used by stapler
+        public ListBoxModel doFillCredentialsIdItems(
+                @AncestorInPath Item item,
+                @QueryParameter String credentialsId) {
+
+            final StandardListBoxModel result = new StandardListBoxModel();
+            if (item == null) {
+                if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                    return result.includeCurrentValue(credentialsId);
+                }
+            }
+            else {
+                if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+                    return result.includeCurrentValue(credentialsId);
+                }
+            }
+
+            return result
+                    .includeEmptyValue()
+                    .includeMatchingAs(
+                            item instanceof Queue.Task ? Tasks.getAuthenticationOf((Queue.Task) item) : ACL.SYSTEM,
+                            item,
+                            StandardCredentials.class,
+                            Collections.emptyList(),
+                            CredentialsMatchers.anyOf(
+                                CredentialsMatchers.instanceOf(StandardUsernamePasswordCredentials.class),
+                                CredentialsMatchers.instanceOf(StringCredentials.class)))
+                    .includeCurrentValue(credentialsId);
+        }
+
         /**
          * Checks if the user name and password are valid.
          */
         @RequirePOST
         public FormValidation doLoginCheck(@QueryParameter String url,
-                @QueryParameter String username, @QueryParameter String password)
+                @QueryParameter String credentialsId)
                 throws IOException {
 
             url = hudson.Util.fixEmpty(url);
@@ -137,18 +251,13 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             if (jenkins == null || !jenkins.hasPermission(Jenkins.ADMINISTER))
                 return FormValidation.ok();
 
-            username = hudson.Util.fixEmpty(username);
-            password = hudson.Util.fixEmpty(password);
-
-            if (username == null || password == null) {
-                return FormValidation.warning("Enter username and password");
-            }
-
-            final ConfluenceSite site = new ConfluenceSite(new URL(url), username, password);
+            final ConfluenceSite site = new ConfluenceSite();
+            site.setUrl(new URL(url));
+            site.setCredentialsId(credentialsId);
 
             try {
-                site.createSession().getCurrentUser();
-                return FormValidation.ok("SUCCESS");
+                Person currentUser = site.createSession().getCurrentUser();
+                return FormValidation.ok("SUCCESS - User: " + currentUser.getDisplayName());
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Failed to login to Confluence at " + url, e);
                 return FormValidation.error(e, "Failed to login");
@@ -190,10 +299,95 @@ public class ConfluenceSite implements Describable<ConfluenceSite> {
             }.check();
         }
 
+        public FormValidation doCheckCredentialsId(
+                @AncestorInPath Item item,
+                @QueryParameter String value) {
+
+            if (item == null) {
+                if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                    return FormValidation.ok();
+                }
+            }
+            else {
+                if (!item.hasPermission(Item.EXTENDED_READ)
+                        && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+                    return FormValidation.ok();
+                }
+            }
+
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.ok();
+            }
+
+            ListBoxModel creds = CredentialsProvider.listCredentials(
+                    StandardCredentials.class,
+                    item,
+                    item instanceof Queue.Task ? Tasks.getAuthenticationOf((Queue.Task) item) : ACL.SYSTEM,
+                    URIRequirementBuilder.create().build(),
+                    CredentialsMatchers.withId(value));
+            if (creds.isEmpty()) {
+                return FormValidation.error("Cannot find currently selected credentials");
+            }
+
+            return FormValidation.ok();
+        }
+
         @Override
         public String getDisplayName() {
             return "Confluence Site";
         }
+    }
+
+    //For backwards compatibility. ReadResolve is called on startup
+    private Object readResolve() throws IOException {
+        if (StringUtils.isBlank(credentialsId) && StringUtils.isNotBlank(username) && password != null)
+            migrateCredentials();
+
+        return this;
+    }
+
+    private void migrateCredentials() throws IOException {
+         final List<StandardUsernamePasswordCredentials> credentials =
+                CredentialsMatchers.filter(
+                        lookupCredentials(
+                                StandardUsernamePasswordCredentials.class,
+                                Jenkins.get(),
+                                ACL.SYSTEM,
+                                URIRequirementBuilder.create().build()),
+                        CredentialsMatchers.withUsername(username));
+
+        for (final StandardUsernamePasswordCredentials cred : credentials) {
+            if (StringUtils.equals(password.getPlainText(), Secret.toString(cred.getPassword()))) {
+                // If some credentials have the same username/password, use those.
+                credentialsId = cred.getId();
+                break;
+            }
+        }
+
+        if (StringUtils.isBlank(credentialsId)) {
+            // If we couldn't find any existing credentials,
+            // create new credentials with the principal and secret and use it.
+            for (CredentialsStore credentialsStore : CredentialsProvider.lookupStores(Jenkins.get())) {
+                if (credentialsStore instanceof SystemCredentialsProvider.StoreImpl) {
+                    String newCredentialsId = UUID.randomUUID().toString();
+
+                    credentialsStore.addCredentials(
+                        credentialsStore.getDomains().get(0),
+                        new UsernamePasswordCredentialsImpl(
+                                CredentialsScope.SYSTEM,
+                                newCredentialsId,
+                                "Migrated from confluence-publisher username/password",
+                                username,
+                                password.getPlainText()));
+
+                    credentialsId = newCredentialsId;
+                    break;
+                }
+            }
+        }
+
+        username = null;
+        password = null;
     }
 
     private static final Logger LOGGER = Logger.getLogger(ConfluenceSite.class.getName());
