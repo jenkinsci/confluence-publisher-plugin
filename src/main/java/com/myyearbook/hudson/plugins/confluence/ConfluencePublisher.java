@@ -276,8 +276,9 @@ public final class ConfluencePublisher extends Notifier implements Saveable, Sim
                         + " workspace artifact(s) to upload to Confluence...");
 
                 for (FilePath file : workspaceFiles) {
-                    if (!files.contains(file)) {
-                        files.add(file.toVirtualFile());
+                    VirtualFile vf = file.toVirtualFile();
+                    if (!files.contains(vf)) {
+                        files.add(vf);
                     } else {
                         // Don't include the file twice if it's already in the
                         // list
