@@ -18,17 +18,17 @@
 
     <f:entry title="Space" field="spaceName">
         <f:textbox clazz="required"
-            checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
+            checkUrl="'descriptorByName/ConfluencePublisher/spaceNameCheck?siteName='+findMatchingFormInput(this,'siteName').value+'&amp;spaceName='+escape(this.value)" />
     </f:entry>
 
     <f:entry title="Page" field="pageName">
         <f:textbox clazz="required"
-            checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
+            checkUrl="'descriptorByName/ConfluencePublisher/pageNameCheck?siteName='+findMatchingFormInput(this,'siteName').value+'&amp;spaceName='+findMatchingFormInput(this,'_.spaceName').value+'&amp;pageName='+escape(this.value)" />
     </f:entry>
 
     <f:entry title="Parent Page ID" field="parentId">
         <f:textbox
-            checkUrl="'descriptorByName/ConfluencePublisher/parentIdCheck?siteName='+Form.findMatchingInput(this,'siteName').value+'&amp;spaceName='+Form.findMatchingInput(this,'_.spaceName').value+'&amp;parentId='+escape(this.value)" />
+            checkUrl="'descriptorByName/ConfluencePublisher/parentIdCheck?siteName='+findMatchingFormInput(this,'siteName').value+'&amp;spaceName='+findMatchingFormInput(this,'_.spaceName').value+'&amp;parentId='+escape(this.value)" />
     </f:entry>
 
     <f:entry title="Page Labels" field="labels" help="${descriptor.getHelpFile('labels')}">

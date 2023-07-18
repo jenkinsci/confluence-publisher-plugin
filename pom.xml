@@ -27,7 +27,7 @@
 
     <properties>
         <changelist>9999-SNAPSHOT</changelist>
-        <jenkins.version>2.361.4</jenkins.version>
+        <jenkins.version>2.410</jenkins.version>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
         <no-test-jar>false</no-test-jar>
         <!-- Use the same configuration than before. -->
@@ -82,8 +82,8 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.361.x</artifactId>
-                <version>1968.vb_14a_29e76128</version>
+                <artifactId>bom-2.401.x</artifactId>
+                <version>2244.vd60654536b_96</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
