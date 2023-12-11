@@ -6,7 +6,17 @@
 [![GitHub release](https://img.shields.io/github/release/jenkinsci/confluence-publisher-plugin.svg?label=release)](https://github.com/jenkinsci/confluence-publisher-plugin/releases/latest)
 [![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/confluence-publisher.svg?color=blue)](https://plugins.jenkins.io/confluence-publisher)
 
+# [Plugin distribution suspended](https://github.com/jenkins-infra/helpdesk/issues/3856)
 
+Distribution of this plugin has been suspended by the Jenkins project because it uses several closed source dependencies.
+The closed source dependencies in the most recent release include:
+
+* `com.atlassian.confluence:confluence-java-api:7.14.0`
+* `com.atlassian.confluence:confluence-rest-client:7.14.0`
+* `com.atlassian.confluence:confluence-rest-serialization:7.14.0`
+* `com.atlassian.confluence:confluence-rest-api:7.14.0`
+
+The Jenkins project [governance document](https://www.jenkins.io/project/governance/#license) and the [plugin hosting instructions](https://www.jenkins.io/doc/developer/publishing/preparation/#license) both note that the Jenkins project requires that plugins distributed by the Jenkins project must be open source and use open source dependencies.
 
 Older versions of this plugin may not be safe to use. Please review the
 following warnings before using an older version:
